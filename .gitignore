@@ -1,4 +1,4 @@
- */*.zip
- */*.pdf
- */*.asv
- */*.mtx
+*.zip
+*.pdf
+*.asv
+*.mtx
