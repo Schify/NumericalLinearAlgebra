@@ -1,0 +1,149 @@
+\documentclass{article}
+\usepackage[top=2cm, bottom=2cm, left=2.2cm, right=2.5cm]{geometry}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{enumerate}% http://ctan.org/pkg/enumerate
+
+\usepackage[]{pdfcomment}
+%As recommended by matlab2tikz
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage{calc}
+\usepackage{pgfplotstable}
+\usepackage{booktabs}
+\usepackage{csvsimple}
+\usepackage{etoolbox}
+\usepackage{biblatex}
+\bibliography{refs.bib}
+%% the following commands are needed for some matlab2tikz features
+\usetikzlibrary{plotmarks}
+\usetikzlibrary{arrows.meta,positioning}
+\usepgfplotslibrary{patchplots}
+\usepackage{grffile}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{placeins,nicefrac}
+\usepackage{xstring}
+\usepackage[]{pgfkeys}
+\usepackage{xfrac}
+%\usepackage{minted}
+\usetikzlibrary{external}
+\usetikzlibrary{calc,math}
+\tikzexternalize[prefix=extern/]
+\usepgfplotslibrary{groupplots}
+\usepgfplotslibrary{colormaps}
+\usetikzlibrary{decorations.markings,patterns,patterns.meta,pgfplots.fillbetween}
+
+\usepackage[ruled,vlined,linesnumbered,algo2e]{algorithm2e}
+\usepackage{wrapfig}
+\usepackage{subcaption}
+
+
+\usepackage{wasysym}
+\usepackage{animate}
+
+
+\graphicspath{{../figs/}}
+\newcommand{\figurescale}{1.0}
+
+\usepackage{titlesec}
+\titleformat{\subsection}{\normalfont\large\bfseries}{Task \thesubsection}{1em}{}
+\titleformat{\section}{\normalfont\Large\bfseries}{Assignment \thesection}{1em}{}
+\titleformat{\subsubsection}{\normalfont\bfseries}{Question \thesubsubsection}{1em}{}
+
+\newcommand{\stilltodo}[1]{{\color{red} UNFINISHED #1}}
+
+\makeatletter
+\newcommand{\trp}{%
+	{\mathpalette\@transpose{}}%
+}
+\newcommand*{\@transpose}[2]{%
+	% #1: math style
+	% #2: unused
+	\raisebox{\depth}{$\m@th#1\intercal$}%
+}
+
+\makeatother
+\newcommand{\diff}{\mathrm{d}}
+\author{Andr\'as Schifferer, r0915705}
+\title{Numerical Linear Algebra [H03G1A]\\{\LARGE HW 1}}
+\date{\today} 
+
+\pgfplotsset{plot coordinates/math parser=false}
+\newlength\figureheight
+\newlength\figurewidth 
+
+
+\pgfqkeys{/pgf}{use fpu reciprocal/.code={%
+		\def\pgfmathreciprocal@##1{%
+			\begingroup
+			\pgfkeys{/pgf/fpu=true,/pgf/fpu/output format=fixed}%
+			\pgfmathparse{1/##1}%
+			\pgfmath@smuggleone\pgfmathresult
+			\endgroup
+}}}%
+\tikzset{
+	set arrow inside/.code={\pgfqkeys{/tikz/arrow inside}{#1}},
+	set arrow inside={end/.initial=>, opt/.initial=},
+	/pgf/decoration/Mark/.style={
+		mark/.expanded=at position #1 with
+		{
+			\noexpand\arrow[\pgfkeysvalueof{/tikz/arrow inside/opt}]{\pgfkeysvalueof{/tikz/arrow inside/end}}
+		}
+	},
+	arrow inside/.style 2 args={
+		set arrow inside={#1},
+		postaction={
+			decorate,decoration={
+				markings,Mark/.list={#2}
+			}
+		}
+	},
+}
+
+\begin{document}
+	\maketitle
+	%The assignment is not yet finished unfortunately.
+	\tableofcontents
+	\section{Semi-Orthogonality and strategic reorthogonalization}
+	The Lánczos algortihm can be used to construct a Hessenberg decomposition of a matrix plus a rank 1 term. If we restrict the matrix inputs to real symmetric matrices, then the symmetry requirement will force the apprximately similar Hessenberg matrix to be symmetric as well, which results necessarily in a tridiagonal matrix.
+	\begin{algorithm2e}[ht]\label{alg:Lanczos}
+		\SetKwInOut{Input}{input}
+		\SetKwInOut{Output}{output}
+		\SetKw{Init}{init}{}{}
+		\SetAlgoLined
+		\Input{Linear, symmetric real operator $A$ on $\mathbb{R}$}
+		\Output{Approximately orthogonally similar tridiagonal $T\sim A$, given by diagonals $\mathbf{\alpha},\mathbf{\beta}$}
+		\Init{choose starting vector $\mathbf{r}_0$,$\beta_0:=\|\mathbf{r}_0\|$, $\mathbf{q}_0=0$}\\
+		\For{$j=1,2,...$}{
+			$\mathbf{q}_j:=\mathbf{r}_{j-1}/\beta_{j-1}$\\
+			$\mathbf{v}_j=A\mathbf{q}_j-\beta_{j-1}\mathbf{q}_{j-1}$\\
+			$\alpha_j=\mathbf{v}_j^{\ast}\mathbf{q}_j$\\
+			$\mathbf{r}_j=\mathbf{v}_j-\alpha_j\mathbf{q}_j$\\
+			$\beta_j=\|\mathbf{r}_j\|$\\
+		}
+		\caption{Lanczos in exact arithmetic}
+	\end{algorithm2e}\\
+	
+	The matrix $T$ then has the form 
+	$$T=\begin{pmatrix}
+		\alpha_1&\beta_1&0&\cdots&0\\
+		\beta_1&\alpha_2&\beta_2&&0\\
+		\vdots&\ddots&\ddots&\ddots&\vdots\\
+		0&&\beta_{j-2}&\alpha_{j-1}&\beta_{j-1}\\
+		0&\cdots&0&\beta_{j-1}&\alpha_{j}\\
+	\end{pmatrix}$$
+	One step in the main loop of algorithm \ref{alg:Lanczos} is called a Lanczos step, and is usually written as
+	\begin{equation}\label{eq:LanczosStep}
+		\beta_j\mathbf{q}_{j+1}=A\mathbf{q}_j-\alpha_j\mathbf{q}_j-\beta_{j-1}\mathbf{q}_{j-1}.
+	\end{equation}
+	As you know, with $Q_{j}:=[\mathbf{q}_1,\ldots,\mathbf{q}_j]$, we have the relation
+	\begin{equation}\label{eq:matLanczos}
+		AQ_{j}=Q_jT_j+\beta_{j}\mathbf{q}_{j+1}\mathbf{e}^{\ast}.
+	\end{equation}
+	In exact arithmetic the above is a great procedure for tridiagonalization. Numerically this is
+	not the case unfortunately, as the orthogonality of $Q$ gets diminished by numerical errors.
+
+\FloatBarrier
+\newpage
+\printbibliography
+\end{document}
