@@ -3,7 +3,7 @@ close all
 
 A=mmread("Test.mtx");
 
-[Q_k,T_k,r,err_ind, w_k_inf]=Lanczos1(A, 25, rand(size(A,1), 1), max(max(A)));
+[Q_k,T_k,r,err_ind, w_k_inf]=Lanczos1(A, 200, rand(size(A,1), 1), max(max(A)));
 
 W_k = Q_k' * Q_k;
 

@@ -1,7 +1,8 @@
-function [Q_k,T_k,r,err_ind, w_k_inf] = Lanczos_HW1(A,kmax,r,nrm_A,reorth)
-
-    if nargin <= 4
-        reorth = 0;
+function [Q_k,T_k,r,err_ind, w_k_inf] = Lanczos0(ax,r,nrm_A,reorth)
+%Theoretical Lanczos algortihm
+    calc_w_k_inf = false;
+    if nargout > 4
+        calc_w_k_inf = true;
     end
 
 
@@ -40,10 +41,16 @@ for j=1:kmax
   alpha(j) = q'*r;
   r = r - alpha(j)*q;
   beta(j+1) = norm(r);
+  if calc_w_k_inf %Calculate w_k_inf for error monitoring reasons
+      W_j = Q_k(:, 1:j)'*Q_k(:, 1:j);
+    %   figure(5)
+    %   imagesc(log10(abs(W_j)));
+    %   colormap("jet")
+    %   colorbar()
+      w_k_inf(j) = max(abs(W_j-eye(j,j)), [], "all");%Only calculate this if there are more output arguments!!!
+  end  
 
-  W_j = Q_k(1:j, 1:j)'*Q_k(1:j, 1:j);
-  w_k_inf(j) = max(abs(W_j-eye(j,j)), [], "all");%Only calculate this if there are more output arguments!!!
-end
+ end
 
 T_k = spdiags([[beta(2:j);0] alpha(1:j) beta(1:j)],-1:1,j,j);
 end
