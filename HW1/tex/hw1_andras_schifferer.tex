@@ -25,7 +25,7 @@
 \usepackage{xstring}
 \usepackage[]{pgfkeys}
 \usepackage{xfrac}
-%\usepackage{minted}
+\usepackage{minted}
 \usetikzlibrary{external}
 \usetikzlibrary{calc,math}
 \tikzexternalize[prefix=extern/]
@@ -69,36 +69,8 @@
 \date{\today} 
 
 \pgfplotsset{plot coordinates/math parser=false}
-\newlength\figureheight
-\newlength\figurewidth 
 
 
-\pgfqkeys{/pgf}{use fpu reciprocal/.code={%
-		\def\pgfmathreciprocal@##1{%
-			\begingroup
-			\pgfkeys{/pgf/fpu=true,/pgf/fpu/output format=fixed}%
-			\pgfmathparse{1/##1}%
-			\pgfmath@smuggleone\pgfmathresult
-			\endgroup
-}}}%
-\tikzset{
-	set arrow inside/.code={\pgfqkeys{/tikz/arrow inside}{#1}},
-	set arrow inside={end/.initial=>, opt/.initial=},
-	/pgf/decoration/Mark/.style={
-		mark/.expanded=at position #1 with
-		{
-			\noexpand\arrow[\pgfkeysvalueof{/tikz/arrow inside/opt}]{\pgfkeysvalueof{/tikz/arrow inside/end}}
-		}
-	},
-	arrow inside/.style 2 args={
-		set arrow inside={#1},
-		postaction={
-			decorate,decoration={
-				markings,Mark/.list={#2}
-			}
-		}
-	},
-}
 
 \begin{document}
 	\maketitle
@@ -106,7 +78,8 @@
 	\tableofcontents
 	\section{Semi-Orthogonality and strategic reorthogonalization}
 	The Lánczos algortihm can be used to construct a Hessenberg decomposition of a matrix plus a rank 1 term. If we restrict the matrix inputs to real symmetric matrices, then the symmetry requirement will force the apprximately similar Hessenberg matrix to be symmetric as well, which results necessarily in a tridiagonal matrix.
-	\begin{algorithm2e}[ht]\label{alg:Lanczos}
+	\begin{algorithm2e}[ht]
+		\label{alg:Lanczos}
 		\SetKwInOut{Input}{input}
 		\SetKwInOut{Output}{output}
 		\SetKw{Init}{init}{}{}
@@ -132,17 +105,19 @@
 		0&&\beta_{j-2}&\alpha_{j-1}&\beta_{j-1}\\
 		0&\cdots&0&\beta_{j-1}&\alpha_{j}\\
 	\end{pmatrix}$$
-	One step in the main loop of algorithm \ref{alg:Lanczos} is called a Lanczos step, and is usually written as
+	One step in the main loop of \autoref{alg:Lanczos} is called a Lanczos step, and is usually written as
 	\begin{equation}\label{eq:LanczosStep}
 		\beta_j\mathbf{q}_{j+1}=A\mathbf{q}_j-\alpha_j\mathbf{q}_j-\beta_{j-1}\mathbf{q}_{j-1}.
 	\end{equation}
-	As you know, with $Q_{j}:=[\mathbf{q}_1,\ldots,\mathbf{q}_j]$, we have the relation
+%	\inputminted[firstline=2, lastline=5]{matab}{../NLAHW1_Lanczos/test.m}
+	
+	We know that, with $Q_{j}:=[\mathbf{q}_1,\ldots,\mathbf{q}_j]$, we have the relation
 	\begin{equation}\label{eq:matLanczos}
 		AQ_{j}=Q_jT_j+\beta_{j}\mathbf{q}_{j+1}\mathbf{e}^{\ast}.
 	\end{equation}
 	In exact arithmetic the above is a great procedure for tridiagonalization. Numerically this is
 	not the case unfortunately, as the orthogonality of $Q$ gets diminished by numerical errors.
-
+	
 \FloatBarrier
 \newpage
 \printbibliography
