@@ -24,6 +24,7 @@ Q_k = zeros(n,kmax);
 q = zeros(n,1); beta(1)=norm(r);
 w_k_inf = zeros(kmax, 1);
 
+full_reorth = 0;
 for j=1:kmax
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,18 +37,52 @@ for j=1:kmax
     q = r / beta(j);
   end
   Q_k(:,j) = q;
-  %Reorthogonalization
-
-
   u = A*q;
   r = u - beta(j)*q_old;
   alpha(j) = q'*r;
   r = r - alpha(j)*q;
   beta(j+1) = norm(r);
+    
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%  PART THREE: COMPUTE ORTH. LOSS  %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
-  if calc_w_k_inf
-      w_k_inf(j) = max(abs(Q_k(:, 1:j)'*Q_k(:, 1:j)-eye(j,j)), [], "all");
+  % In this part you should calculate loss of orth.
+  
+  % Lanczos1.m                  : compute w_{j,\infty}
+  if (j<kmax-1)
+      if beta(j+1)==0
+        q_new = r;
+      else
+        q_new = r / beta(j+1);
+      end
+      Q_k(:, j+1) = q_new;
+      w_k_inf(j+1) = max(abs(Q_k(:, 1:j+1)'*Q_k(:, 1:j+1)-eye(j+1,j+1)), [], "all");
+      if w_k_inf(j+1)>delta
+          fprintf("Reorthogonlaizing needed: %i\n", j)
+          full_reorth = 3;
+      end
   end
+  % Lanczos2.m & Lanczos3.m     : compute w vec. through recurrence (see 'update_w' below)
+  
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%        PART FOUR: REORTH.        %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  % In this part you should reorthogonalize whenever loss. of orth. is
+  % detected
+  
+  % Lanczos1.m & Lanczos2.m     : full reorth (see boolean full_reorth)
+  if full_reorth>0 && j>2
+    %reorthogonlaize q_j
+    r = r - Q_k(:, 1:j-1)*(Q_k(:, 1:j-1)'*r);
+    %r = r - Q_k(:, 1:j-1)*(Q_k(:, 1:j-1)'*r);
+    alpha(j) = q'*r;
+    r = r - alpha(j)*q;
+    beta(j+1) = norm(r);
+    full_reorth = full_reorth-1;
+  end
+  
 
  end
 
