@@ -34,6 +34,7 @@ cleanfigure;
 matlab2tikz('../plots/lanczos0_W.tex','relativeDataPath','../plots');%/lanczos0_W.tex
 
 figure(2)
+e = ones(size(T_k, 1),1);
 imagesc(log10(abs(A*Q_k-Q_k*T_k)));%-r*ones(size(T_k, 1),1)' 
 colorbar
 %% Lanczos 1

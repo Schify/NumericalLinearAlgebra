@@ -60,7 +60,7 @@ for j=1:kmax
       w_k_inf(j+1) = max(abs(Q_k(:, 1:j+1)'*Q_k(:, 1:j+1)-eye(j+1,j+1)), [], "all");
       if w_k_inf(j+1)>delta
           fprintf("Reorthogonlaizing needed: %i\n", j)
-          full_reorth = 3;
+          full_reorth = 2;
       end
   end
   % Lanczos2.m & Lanczos3.m     : compute w vec. through recurrence (see 'update_w' below)
@@ -77,8 +77,8 @@ for j=1:kmax
     %reorthogonlaize q_j
     r = r - Q_k(:, 1:j-1)*(Q_k(:, 1:j-1)'*r);
     %r = r - Q_k(:, 1:j-1)*(Q_k(:, 1:j-1)'*r);
-    alpha(j) = q'*r;
-    r = r - alpha(j)*q;
+    alpha_loc = q'*r;
+    r = r - alpha_loc*q;
     beta(j+1) = norm(r);
     full_reorth = full_reorth-1;
   end
