@@ -284,3 +284,5 @@ TSWLatexianTemp*
 
 **/tex/*.pdf
 **/given/**
+**/plots/**
+**/extern/**

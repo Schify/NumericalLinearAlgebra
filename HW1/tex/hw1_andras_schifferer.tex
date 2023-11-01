@@ -36,7 +36,7 @@
 \usepackage[ruled,vlined,linesnumbered,algo2e]{algorithm2e}
 \usepackage{wrapfig}
 \usepackage{subcaption}
-
+\graphicspath{../plots/}
 
 \usepackage{wasysym}
 \usepackage{animate}
@@ -45,10 +45,10 @@
 \graphicspath{{../figs/}}
 \newcommand{\figurescale}{1.0}
 
-\usepackage{titlesec}
-\titleformat{\subsection}{\normalfont\large\bfseries}{Task \thesubsection}{1em}{}
-\titleformat{\section}{\normalfont\Large\bfseries}{Assignment \thesection}{1em}{}
-\titleformat{\subsubsection}{\normalfont\bfseries}{Question \thesubsubsection}{1em}{}
+%\usepackage{titlesec}
+%\titleformat{\subsection}{\normalfont\large\bfseries}{Task \thesubsection}{1em}{}
+%\titleformat{\section}{\normalfont\Large\bfseries}{Assignment \thesection}{1em}{}
+%\titleformat{\subsubsection}{\normalfont\bfseries}{Question \thesubsubsection}{1em}{}
 
 \newcommand{\stilltodo}[1]{{\color{red} UNFINISHED #1}}
 
@@ -79,7 +79,7 @@
 	\section{Semi-Orthogonality and strategic reorthogonalization}
 	The Lánczos algortihm can be used to construct a Hessenberg decomposition of a matrix plus a rank 1 term. If we restrict the matrix inputs to real symmetric matrices, then the symmetry requirement will force the apprximately similar Hessenberg matrix to be symmetric as well, which results necessarily in a tridiagonal matrix.
 	\begin{algorithm2e}[ht]
-		\label{alg:Lanczos}
+		
 		\SetKwInOut{Input}{input}
 		\SetKwInOut{Output}{output}
 		\SetKw{Init}{init}{}{}
@@ -94,7 +94,7 @@
 			$\mathbf{r}_j=\mathbf{v}_j-\alpha_j\mathbf{q}_j$\\
 			$\beta_j=\|\mathbf{r}_j\|$\\
 		}
-		\caption{Lanczos in exact arithmetic}
+		\caption{Lanczos in exact arithmetic}\label{alg:Lanczos}
 	\end{algorithm2e}\\
 	
 	The matrix $T$ then has the form 
@@ -118,6 +118,20 @@
 	In exact arithmetic the above is a great procedure for tridiagonalization. Numerically this is
 	not the case unfortunately, as the orthogonality of $Q$ gets diminished by numerical errors.
 	
+	The 'practical' Lanczos algorithm (hereby reffered to as Lanczos0) will lose stability after only a small number of iterations, as examplified in \autoref{fig:lanczos0_W}
+	\begin{figure}
+		\centering
+		\resizebox{\textwidth}{!}{
+		\input{../plots/lanczos0_W.tex}}
+		\caption{Loss of orthogonality in Lanczos 0}\label{fig:lanczos0_W}
+	\end{figure}
+	
+	\begin{figure}
+		\centering
+		\resizebox{\textwidth}{!}{
+			\input{../plots/lanczos1_W.tex}}
+		\caption{Loss of orthogonality in Lanczos 1}\label{fig:lanczos1_W}
+	\end{figure}
 \FloatBarrier
 \newpage
 \printbibliography
