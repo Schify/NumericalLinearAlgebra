@@ -4,6 +4,7 @@ function [Q_k,T_k,r,err_ind, w_k_inf] = Lanczos0(A,kmax,r,nrm_A)
     if nargout > 4
         calc_w_k_inf = true;
     end
+% Plotting the ritz values as a function of steps
 
 
 % INIT
@@ -49,9 +50,12 @@ for j=1:kmax
       w_k_inf(j) = max(abs(Q_k(:, 1:j)'*Q_k(:, 1:j)-eye(j,j)), [], "all");
   end
 
+ 
  end
 
 T_k = spdiags([[beta(2:j);0] alpha(1:j) beta(1:j)],-1:1,j,j);
+
+
 end
 
 

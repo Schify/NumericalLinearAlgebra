@@ -16,11 +16,15 @@
 \bibliography{refs.bib}
 %% the following commands are needed for some matlab2tikz features
 \usetikzlibrary{plotmarks}
-\usetikzlibrary{arrows.meta,positioning}
+\usetikzlibrary{arrows.meta}
 \usepgfplotslibrary{patchplots}
 \usepackage{grffile}
-\usepackage{hyperref}
 \usepackage{amsmath}
+%% you may also want the following commands
+\pgfplotsset{plot coordinates/math parser=false}
+%\newlength\figureheight
+%\newlength\figurewidth
+\usepackage{hyperref}
 \usepackage{placeins,nicefrac}
 \usepackage{xstring}
 \usepackage[]{pgfkeys}
@@ -41,7 +45,12 @@
 \usepackage{wasysym}
 \usepackage{animate}
 
+%\usepackage{expl3}
+%\ExplSyntaxOn
+%\cs_set_eq:NN \fpeval \fp_eval:n
+%\ExplSyntaxOff
 
+\usetikzlibrary{fpu}
 \graphicspath{{../figs/}}
 \newcommand{\figurescale}{1.0}
 
@@ -76,6 +85,11 @@
 	\maketitle
 	%The assignment is not yet finished unfortunately.
 	\tableofcontents
+	
+	
+	Note that throughout the assignment if an algorithm is performed on an unspecified matrix, then the subjected matrix should be understood to be the one provided for the assignment as \texttt{Test.mtx}.
+	
+	\newpage
 	\section{Semi-Orthogonality and strategic reorthogonalization}
 	The Lánczos algortihm can be used to construct a Hessenberg decomposition of a matrix plus a rank 1 term. If we restrict the matrix inputs to real symmetric matrices, then the symmetry requirement will force the apprximately similar Hessenberg matrix to be symmetric as well, which results necessarily in a tridiagonal matrix.
 	\begin{algorithm2e}[ht]
@@ -118,13 +132,26 @@
 	In exact arithmetic the above is a great procedure for tridiagonalization. Numerically this is
 	not the case unfortunately, as the orthogonality of $Q$ gets diminished by numerical errors.
 	
-	The 'practical' Lanczos algorithm (hereby reffered to as Lanczos0) will lose stability after only a small number of iterations, as examplified in \autoref{fig:lanczos0_W}
+	\subsection{Lanczos0: 'theoretical' Lanczos}
+	
+	The theoretical Lanczos algorithm (hereby reffered to as Lanczos0) will lose stability after only a small number of iterations, as examplified in \autoref{fig:lanczos0_W}
 	\begin{figure}
 		\centering
 		\resizebox{\textwidth}{!}{
 		\input{../plots/lanczos0_W.tex}}
 		\caption{Loss of orthogonality in Lanczos 0}\label{fig:lanczos0_W}
 	\end{figure}
+	We can see that orthogonality is rapidlly lost at about iteration 20, and after that point a significant part of the former vectors are no longer orthogonal to the new ones.
+	
+	This can be further corrobarated by the convergence of the Ritz values as seen in \autoref{fig:lanczos0_W_ritz}. Note that the test matrix (provided in \texttt{Test.mtx}) only has real eigenvalues more than or equal to one. We can see that in 
+	comparison with the better performing Lanczos1 algorithm (to be discussed later) where the Ritz values seem to be doing a good job approximating the spectrum of eigenvalues (in \autoref{fig:lanczos1_W_ritz}). In contrast Lanczos0 has trouble fully covering the eigenvalues in the Test matrix. Even at higher iteration numbers (i.e. a larger number of Ritz values) sometimes a spurious Ritz value appears, for example between the two largest eigenvalues at $j=39$. This might be explained by the last vector having a too high component parallel to the eigenvector corresponding to a larger eigenvalue. Therefore this might change the eigenvalues of $T_k$, which results in a bad quality approximation of the spectrum.
+	
+	
+	
+	\subsection{Lanczos1: 'practical' Lanczos}
+	% It is not practical because calculating Q*Q is a lot of effort
+	
+	
 	
 	\begin{figure}
 		\centering
@@ -132,6 +159,74 @@
 			\input{../plots/lanczos1_W.tex}}
 		\caption{Loss of orthogonality in Lanczos 1}\label{fig:lanczos1_W}
 	\end{figure}
+	
+	\begin{figure}
+	\centering
+	\resizebox{0.95\textwidth}{!}{
+		\includegraphics[trim=0 180 0 250 clip]{../plots/lanczos0_ritz.pdf}}
+	\caption{Lanczos0: The eigenvalues of the test matrix ($\lambda_i$'s histogram) and the Ritz values at the $j^{\mathrm{th}}$ iteration ($\mu_i$, denoted by ${\color{red} \times}$ )}\label{fig:lanczos0_W_ritz}
+	\end{figure}
+	
+	\begin{figure}
+	\centering
+	\resizebox{0.95\textwidth}{!}{
+		\includegraphics[trim=0 170 0 180,clip]{../plots/lanczos1_ritz.pdf}}
+	\caption{Lanczos1: The eigenvalues of the test matrix ($\lambda_i$'s histogram) and the Ritz values at the $j^{\mathrm{th}}$ iteration ($\mu_i$, denoted by ${\color{red} \times}$ )}\label{fig:lanczos1_W_ritz}
+	\end{figure}
+	
+	\FloatBarrier
+	
+	\subsection{Lanczos2: heuristic for loss of orthogonality}
+	
+	Calculating $W = Q^\ast Q$ was the most costly part of the Lanczos1 algorithm, especially since this step needs to be done at each iteration, to determine whether a correction is needed or not in the first place. Loss of orthogonality could be predicted using a parallel system for iteratively constructing $\tilde{W}$, which could serve as a proxy to gauge when loss of orthogonality is to be expected. Our main assumption going forward will be that floating point errors have comaprable behaviour to that of Gaussian noise.
+	
+	Ideally in exact arithmetic $W_j = \mathbb{I}_{j\times j}$ (identity) would hold. However if at each iteration, i.e. the calculation of the new $\textbf{q}_j$, we could have access to the exact arithmetic error (which is assumed to be random and therefore inaccessible), we could predict the evolution of the non-ideal $W_j$. First let's look at the Lanczos step in \autoref{eq:LanczosStep}. By adding the floating point error $\textbf{f}_j$
+	the equation becomes
+	\begin{equation}\label{eq:LanczosStep-f}
+		\beta_j\mathbf{q}_{j+1}=A\mathbf{q}_j-\alpha_j\mathbf{q}_j-\beta_{j-1}\mathbf{q}_{j-1} - \textbf{f}_j.
+	\end{equation}
+	This can be transformed in a similar fashion as before into 
+	\begin{equation}
+		AQ_{j}=Q_jT_j+\beta_{j}\mathbf{q}_{j+1}\mathbf{e}^{\ast} + F_j,
+	\end{equation}
+	where $F_j$ is a matrix collecting the error terms.
+	
+	We will assume, that at any given point the bases has remained sufficiently orthonormal, and therefore 
+	\begin{align}
+		\left\lVert \textbf{q}_k \right\rVert_2 &= 1,\\
+		\beta_{k} \textbf{q}_k^\ast \textbf{q}_{k+1} &= C \epsilon \left\lVert A \right\rVert,
+	\end{align}
+	where $C$ is a modest constant. This presupposes the fact that we won't let the orthogonality to diminish too much.
+	
+	We can manipulate \autoref{eq:LanczosStep-f} by taking the inner product with $\textbf{q}_k$. Thereby
+	\begin{equation}\label{eq:reccurence-mult}
+		\beta_j\mathbf{q}_k^*\mathbf{q}_{j+1}=\mathbf{q}_k^*A\mathbf{q}_j-\alpha_j\mathbf{q}_k^*\mathbf{q}_j-\beta_{j-1}\mathbf{q}_k^*\mathbf{q}_{j-1} - \mathbf{q}_k^*\textbf{f}_j,
+	\end{equation}
+	holding true for $j=2,3,\dots J$ and $k=1,2, \dots J$. If we again define $W_J = Q_J^\ast Q_J$, and we denote the elements of this matrix as $w_{x,y}$, then a number of identities may follow, such as 
+	\begin{align}
+		w_{k,k} &=  1, \quad&&\mathrm{for}\,\, k = 1,2 \dots J\label{eq:wconds1}, \\
+		w_{k,k-1} &= \underbrace{\textbf{q}_k^\ast \textbf{q}_{k-1}}_{\psi_k := } \quad&&\mathrm{for}\,\, k = 2,3 \dots J\label{eq:wconds2}, \\
+		w_{j,k+1} &=  w_{k+1, j}\quad&&\mathrm{for}\,\, k = 1,2 \dots J-1\label{eq:wconds3}.
+	\end{align}
+	\autoref{eq:wconds1} is just a result of our stipulation that the system is orthonormal, and we are able to sufficiently normalize the vectors. \autoref{eq:wconds3} follows from the symmetry of $W_{J}$, which is inherent from its definition, as well as \autoref{eq:wconds2} evidently.
+	
+	Notice, that in \autoref{eq:reccurence-mult} the indicies can be swaped, so taking \autoref{eq:LanczosStep-f} at $k$ and multiplying it by $\textbf{q}_{j}$ we get
+	\begin{equation}\label{eq:reccurence-mult-k}
+		\beta_k\mathbf{q}_j^*\mathbf{q}_{k+1}=\mathbf{q}_j^*A\mathbf{q}_k-\alpha_k\mathbf{q}_j^*\mathbf{q}_k-\beta_{k-1}\mathbf{q}_j^*\mathbf{q}_{k-1} - \mathbf{q}_j^*\textbf{f}_k.
+	\end{equation}
+	Looking at the difference of \autoref{eq:reccurence-mult} and \autoref{eq:reccurence-mult-k}
+	\begin{equation}
+		\beta_j\mathbf{q}_k^*\mathbf{q}_{j+1} - \beta_k\mathbf{q}_j^*\mathbf{q}_{k+1}=\underbrace{\mathbf{q}_k^*A\mathbf{q}_j - \mathbf{q}_j^*A\mathbf{q}_k}_{=0} +
+		\alpha_k\mathbf{q}_j^*\mathbf{q}_k - \alpha_j\mathbf{q}_k^*\mathbf{q}_j + \beta_{k-1}\mathbf{q}_j^*\mathbf{q}_{k-1} - \beta_{j-1}\mathbf{q}_k^*\mathbf{q}_{j-1} + \mathbf{q}_j^*\textbf{f}_k  - \mathbf{q}_k^*\textbf{f}_j,
+	\end{equation}
+	where $\mathbf{q}_k^*A\mathbf{q}_j - \mathbf{q}_j^*A\mathbf{q}_k = 0$ thanks to the symmetry of $A$. Thereby
+	\begin{equation}
+		\beta_j w_{k,j+1} = \beta_k w_{j,k+1} = \left(\alpha_k - \alpha_j\right) w_{k,j} + \beta_{k-1} w_{j, k-1} - \beta_{j-1} w_{k,j-1} + \underbrace{\mathbf{q}_j^*\textbf{f}_k-\mathbf{q}_k^*\textbf{f}_j}_{\theta_{j,k} 
+		:=}.
+	\end{equation}
+	 
+	 This update law of the $W_J$ matrix allows us to iteratively construct the matrix for $k=1,\dots j-1$ (stipulating that $w_{k,0} = 0$).
+	
 \FloatBarrier
 \newpage
 \printbibliography
