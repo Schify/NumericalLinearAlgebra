@@ -1,10 +1,5 @@
-function [Q_k,T_k,r,err_ind, w_k_inf] = Lanczos0(A,kmax,r,nrm_A)
-%Theoretical Lanczos algortihm
-    calc_w_k_inf = false;
-    if nargout > 4
-        calc_w_k_inf = true;
-    end
-
+function [Q_k,T_k,r,err_ind] = Lanczos2(A,kmax,r,nrm_A)
+ 
 
 % INIT
 n=size(A,1);
@@ -22,9 +17,8 @@ gamma = 1/sqrt(2);		 % factor to check sufficient reduction
 alpha = zeros(kmax+1,1);  beta = zeros(kmax+1,1);
 Q_k = zeros(n,kmax);
 q = zeros(n,1); beta(1)=norm(r);
-w_k_inf = zeros(kmax, 1);
-
-full_reorth = 0;
+full_reorth=1;			%toggle when needed
+W_k = zeros(kmax,kmax);
 for j=1:kmax
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -42,7 +36,8 @@ for j=1:kmax
   alpha(j) = q'*r;
   r = r - alpha(j)*q;
   beta(j+1) = norm(r);
-    
+  
+
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%  PART THREE: COMPUTE ORTH. LOSS  %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -50,21 +45,15 @@ for j=1:kmax
   % In this part you should calculate loss of orth.
   
   % Lanczos1.m                  : compute w_{j,\infty}
+  % Lanczos2.m & Lanczos3.m     : compute w vec. through recurrence (see 'update_w' below)
+
   if (j<kmax-1)
-      if beta(j+1)==0
-        q_new = r;
-      else
-        q_new = r / beta(j+1);
-      end
-      Q_k(:, j+1) = q_new;
-      w_k_inf(j+1) = max(abs(Q_k(:, 1:j+1)'*Q_k(:, 1:j+1)-eye(j+1,j+1)), [], "all");
+      w_next = update_w(w, w_old, alpha, beta)
       if w_k_inf(j+1)>delta
           fprintf("Reorthogonlaizing needed: %i\n", j)
           full_reorth = 2;
       end
   end
-  % Lanczos2.m & Lanczos3.m     : compute w vec. through recurrence (see 'update_w' below)
-  
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%        PART FOUR: REORTH.        %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,25 +62,23 @@ for j=1:kmax
   % detected
   
   % Lanczos1.m & Lanczos2.m     : full reorth (see boolean full_reorth)
-  if full_reorth>0 && j>2
-    %reorthogonlaize q_j
-    [new_r, new_beta] = reorth(Q_k(:, 1:j), r, norm(r));
-    r = new_r;
-    beta(j+1) = new_beta;
-
-    full_reorth = full_reorth-1;
-  end
+  % Lanczos3.m                  : select L and orth w.r.t. vectors in L
+  %                               DON'T FORGET: update w afterwards!
+  % DON'T FORGET: in next run of main loop, reorth against L (or full) again!!!
+  % Write your reorth in a function of the form 
+  % [r,nrmnew] = reorth(Q_k,r,nrm,L), with nrm the norm of r on input, nrmnew norm on output;
   
-
- end
+  
+  
+  
+  
+end
 
 T_k = spdiags([[beta(2:j);0] alpha(1:j) beta(1:j)],-1:1,j,j);
 end
 
-function [rnew, nrmnew] = reorth(Q_k, r, nrm)
-    r = r - Q_k(:,1:(end-1))*(Q_k(:,1:(end-1))'*r);
-    %r = r - Q_k(:, 1:j-1)*(Q_k(:, 1:j-1)'*r);
-    alpha_loc = Q_k(:,end)'*r;
-    rnew = r - alpha_loc*Q_k(:,end);
-    nrmnew = norm(rnew);
+function [w,w_old] = update_w(w,w_old,alpha,beta)
+    % implement w recurrence here
 end
+
+
