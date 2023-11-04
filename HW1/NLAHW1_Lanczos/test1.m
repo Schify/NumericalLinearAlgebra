@@ -1,3 +1,4 @@
+clear
 addpath("../..")
 addpath("../../matlab2tikz/src/")
 close all
@@ -13,23 +14,7 @@ W_k = Q_k' * Q_k - eye(k, k);
 
 x0 = 200; y0 = 100; width = 800; height = 250;
 figure(1)
-subplot(1,2,1)
-ax=imagesc(log10(abs(W_k)));
-
-colormap("jet")
-title("$W_k$ : $\log_{10} {\left| {\left[W_k - I\right]}_{(i,j)}\right|}$", Interpreter="latex")
-xlabel("$i$", Interpreter="latex")
-ylabel("number of eigenvalues in interval", Interpreter="latex")
-colorbar
-set(gcf,'position',[x0,y0,width,height])
-axis equal
-
-subplot(1,2,2)
-title("$W_{k, \infty}$", Interpreter="latex")
-semilogy(w_k_inf)
-xlabel("$k$", Interpreter="latex")
-ylabel("$w_{k, \infty}$", Interpreter="latex")
-grid on
+plot_W(W_k, w_k_inf, x0, y0, width, height)
 cleanfigure;
 matlab2tikz('../plots/lanczos0_W.tex','relativeDataPath','../plots');%/lanczos0_W.tex
 
@@ -54,26 +39,7 @@ k = size(Q_k, 2);
 W_k = Q_k' * Q_k - eye(k, k);
 
 figure(3)
-subplot(1,2,1)
-ax=imagesc(log10(abs(W_k)));
-
-colormap("jet")
-title("$W_k$ : $\log_{10} {\left| {\left[W_k - I\right]}_{(i,j)}\right|}$", Interpreter="latex")
-xlabel("$i$", Interpreter="latex")
-ylabel("$j$", Interpreter="latex")
-colorbar
-set(gcf,'position',[x0,y0+height,width,height])
-axis equal
-
-subplot(1,2,2)
-title("$W_{k, \infty}$", Interpreter="latex")
-semilogy(w_k_inf)
-xlabel("$k$", Interpreter="latex")
-ylabel("$w_{k, \infty}$", Interpreter="latex")
-grid on 
-cleanfigure;
-matlab2tikz('../plots/lanczos1_W.tex','relativeDataPath','../plots');%/lanczos1_W.tex
-
+plot_W(W_k,w_k_inf, x0, y0+height+100, width, height)
 figure(4)
 imagesc(log10(abs(A*Q_k-Q_k*T_k)));%-r*ones(size(T_k, 1),1)' 
 colorbar

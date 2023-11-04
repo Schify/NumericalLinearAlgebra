@@ -29,7 +29,7 @@ function plot_ritz_real(T, real_eig_values, leave_out_last)
     x_vals = [];
     y_vals = [];
     for j = 1:(size(T,1)-leave_out_last)
-        fprintf("%i \n", j)
+        %fprintf("%i \n", j)
         Diag_Tk = eig(T(1:j, 1:j));
         y_vals = [y_vals; j*ones(j,1)];
         x_vals = [x_vals; real(Diag_Tk)];

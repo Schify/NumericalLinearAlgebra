@@ -1,9 +1,5 @@
-function [Q_k,T_k,r,err_ind, w_k_inf] = Lanczos0(A,kmax,r,nrm_A)
+function [Q_k,T_k,r,err_ind, w_k_inf] = Lanczos1(A,kmax,r,nrm_A)
 %Theoretical Lanczos algortihm
-    calc_w_k_inf = false;
-    if nargout > 4
-        calc_w_k_inf = true;
-    end
 
 
 % INIT
@@ -72,7 +68,7 @@ for j=1:kmax
   % In this part you should reorthogonalize whenever loss. of orth. is
   % detected
   
-  % Lanczos1.m & Lanczos2.m     : full reorth (see boolean full_reorth)
+  % Lanczos1.m & Lanczos2.m     : full reorth (see int full_reorth)
   if full_reorth>0 && j>2
     %reorthogonlaize q_j
     [new_r, new_beta] = reorth(Q_k(:, 1:j), r, norm(r));
