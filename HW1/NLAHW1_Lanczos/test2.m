@@ -5,7 +5,7 @@ close all
 
 A=mmread("Test.mtx");
 
-%% Lanczos 0
+%% Lanczos 2
 kmax = 100;
 [Q_k,T_k,r,err_ind,w_k_inf_quasi]=Lanczos2(A, kmax, rand(size(A,1), 1), max(max(A)));
 kmax = size(Q_k, 2);
@@ -25,13 +25,13 @@ cleanfigure;
 matlab2tikz('../plots/lanczos2_W.tex','relativeDataPath','../plots',...
                 'showInfo', false);%/lanczos0_W.tex
 
-figure(2)
+figure(6)
 e = ones(size(T_k, 1),1);
 imagesc(log10(abs(A*Q_k-Q_k*T_k)));%-r*ones(size(T_k, 1),1)' 
 colorbar
 
 real_eig_values = readmatrix("TestEig.txt");
-figure(69)
+figure(71)
 plot_ritz_real(T_k, real_eig_values)
 cleanfigure;
 matlab2tikz('../plots/lanczos2_ritz.tex','relativeDataPath','../plots',...
