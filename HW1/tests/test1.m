@@ -1,6 +1,7 @@
 clear
 addpath("../..")
 addpath("../../matlab2tikz/src/")
+addpath("../NLAHW1_Lanczos/")
 close all
 
 A=mmread("Test.mtx");

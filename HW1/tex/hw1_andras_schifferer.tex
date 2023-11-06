@@ -7,6 +7,7 @@
 %As recommended by matlab2tikz
 \usepackage{pgfplots}
 \usepackage{tikz}
+\usepackage{nicematrix}
 \usepackage{calc}
 \usepackage{pgfplotstable}
 \usepackage{booktabs}
@@ -87,11 +88,13 @@
 	\tableofcontents
 	
 	
-	Note that throughout the assignment if an algorithm is performed on an unspecified matrix, then the subjected matrix should be understood to be the one provided for the assignment as \texttt{Test.mtx}.
 	
 	\newpage
 	\section{Semi-Orthogonality and strategic reorthogonalization}
-	The Lánczos algortihm can be used to construct a Hessenberg decomposition of a matrix plus a rank 1 term. If we restrict the matrix inputs to real symmetric matrices, then the symmetry requirement will force the apprximately similar Hessenberg matrix to be symmetric as well, which results necessarily in a tridiagonal matrix.
+	\textit{Note that throughout the first part of the assignment if an algorithm is performed on an unspecified matrix, then the subjected matrix should be understood to be the one provided for the assignment as \texttt{Test.mtx}.
+	}
+	
+	The Lánczos algorithm can be used to construct a Hessenberg decomposition of a matrix plus a rank 1 term. If we restrict the matrix inputs to real symmetric matrices, then the symmetry requirement will force the apprximately similar Hessenberg matrix to be symmetric as well, which results necessarily in a tridiagonal matrix.
 	\begin{algorithm2e}[ht]
 		
 		\SetKwInOut{Input}{input}
@@ -226,7 +229,80 @@
 	\end{equation}
 	 
 	 This update law of the $W_J$ matrix allows us to iteratively construct the matrix for $k=1,\dots j-1$ (stipulating that $w_{k,0} = 0$). Here we can assume, that $\psi_k$ and $\theta_{j,k}$ are just noise introduced by imperfect arithmetics, and as such can be stochastically modelled.
+	 
+\section{Eigenvalues of a tridiagonal matrix}
+
+Suppose that a tridiagonal symmetric (real) matrix $T$ is given:
+
+$$T=\begin{pmatrix}
+	\alpha_1&\beta_1&0&\cdots&0\\
+	\beta_1&\alpha_2&\beta_2&&0\\
+	\vdots&\ddots&\ddots&\ddots&\vdots\\
+	0&&\beta_{j-2}&\alpha_{j-1}&\beta_{j-1}\\
+	0&\cdots&0&\beta_{j-1}&\alpha_{j}\\
+\end{pmatrix}$$
+
+Let $T_j := T (1 : j, 1 : j)$ as before. Now let $p_j(x)=\det\left(x I - T_j\right)$ denote the characteristic polynomial of $T_j$ (with $p_0 = 1$). A reccurence relation can easily be established using the recursive nature of the determinant and the matrix. We can write the $j^{\mathrm{th}}$ characteristic polynomial as
+\begin{equation}
+	p_j(x)=\det\left(x I - T_j\right) = \left|\begin{NiceMatrix}
+		x-\alpha_1&-\beta_1&0&\cdots&0\\
+		-\beta_1&x-\alpha_2&-\beta_2&&0\\
+		\vdots&\ddots&\ddots&\ddots&\vdots\\
+		0&&-\beta_{j-2}&x-\alpha_{j-1}&-\beta_{j-1}\\
+		0&\cdots&0&-\beta_{j-1}&x-\alpha_{j}
+		\CodeAfter
+		\begin{tikzpicture}[remember picture, overlay]
+			%\draw[->] (1-1.-20) to[out=-25, in=30] (4-3.30);
+			\draw[red, opacity=0.3, fill opacity=0.05, dashed,rounded corners, fill=red] ($(1-1)!1.3!(1-1.north west)$) rectangle ($(4-4)!1.3!(4-4.south east)$);
+			\node[red, opacity=0.5] at ($(1-4)!0.5!(4-4)$) {$xI-T_{j-1}$};
+			
+			\draw[blue, opacity=0.3, fill opacity=0.05, dashed,rounded corners, fill=blue] (1-1.north west) rectangle (4-3.south east);
+			\draw[blue, opacity=0.3, fill opacity=0.05, dashed,rounded corners, fill=blue] ($(1-5.north)!(4-5.south west)!(1-1.north)$) rectangle (4-5.south east);
+			\node[blue, opacity=0.5] (Ujm) at ($(1-4)+(0,0.3)$) {$U_{j-1}$};
+			\draw [<-, blue, opacity=0.2](Ujm.160) to[in=30, out=150] (1-3);
+			\draw [<-, blue, opacity=0.2](Ujm.20) to[in=150, out=40] (1-5);
+		\end{tikzpicture}
+	\end{NiceMatrix}\right| = \left(x-\alpha_{j}\right) \underbrace{\det{\left(xI-T_{j-1}\right)}}_{p_{j-1}} - \left(-\beta_{j-1}\right) \det{\left(U_{j-1}\right)}
+\end{equation}
+where we just used the so called Laplace expansion on the matrix while looking at the two non-zero elements of the last row. Since the determinant of $U_{j-1}$ can also be simply written as
+\begin{equation*}
+	\det{\left(U_{j-1}\right)} = \left|\begin{NiceMatrix}
+		x-\alpha_1&-\beta_1&0&\cdots&0\\
+		-\beta_1&x-\alpha_2&-\beta_2&&0\\
+		\vdots&\ddots&\ddots&\ddots&\vdots\\
+		0&&-\beta_{j-3}&x-\alpha_{j-2}&0\\
+		0&\cdots&0&-\beta_{j-2}&-\beta_{j-1}
+		\CodeAfter
+		\begin{tikzpicture}[remember picture, overlay]
+			\draw[orange, opacity=0.3, fill opacity=0.05, dashed,rounded corners, fill=orange] ($(1-1)!1.3!(1-1.north west)$) rectangle ($(4-4)!1.3!(4-4.south east)$);
+			\node[red, opacity=0.5] at ($(1-4)!0.5!(4-4)$) {$xI-T_{j-2}$};
+		\end{tikzpicture}
+	\end{NiceMatrix}\right| = -\beta_{j-1} \underbrace{\det\left(xI-T_{j-2}\right)}_{p_{j-2}}
+\end{equation*}
+by expanding using the last row. Therefore using the definition of the characteristic polynomial we have our recursion in the form of 
+\begin{equation}\label{eq:char-rec}
+	p_j(x) = (\alpha_j - x)p_{j-1} (x) - \beta_{j-1}^2
+	p_{j-2}(x).
+\end{equation}
+
+Hence for any given value of $x$, the resulting sequence of characteristic polynomials can be calculated using \autoref{alg:char-poly-eval}, where to get $p_n$ a loop of scalar multiplication, thereby having a complexity of $\mathcal{O}(n)$.
+
+\begin{algorithm2e}[ht]
 	
+	\SetKwInOut{Input}{input}
+	\SetKwInOut{Output}{output}
+	\SetKw{Init}{init}{}{}
+	\SetAlgoLined
+	\Input{Real symmetric tridiagonal matrix $A\in\mathbb{R}^{n\times n}$, given by diagonals $\mathbf{\alpha},\mathbf{\beta}$, $x$ real constant}
+	\Output{$\left\{p_j\right\}_{j=0}^n$ vector of the values of the characteristic polynomials evaluated at $x$}
+	\Init{Allocate the $\left\{p_j\right\}_{j=0}^n$ vector, set the trivial cases: $p_0=1$, $p_1=\alpha_1-x$}\\
+	\For{$j=2,3,...,n$}{
+		$p_j = (\alpha_j - x)p_{j-1} - \beta_{j-1}^2
+		p_{j-2}$\\
+	}
+	\caption{Evaluation of the characteristic polynomials ($p_j$ for $j=1,2,\dots,k$)}\label{alg:char-poly-eval}
+\end{algorithm2e}
+
 \FloatBarrier
 \newpage
 \printbibliography
