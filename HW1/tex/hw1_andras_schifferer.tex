@@ -20,7 +20,6 @@
 \usetikzlibrary{arrows.meta}
 \usepgfplotslibrary{patchplots}
 \usepackage{grffile}
-\usepackage{amsmath}
 %% you may also want the following commands
 \pgfplotsset{plot coordinates/math parser=false}
 %\newlength\figureheight
@@ -80,6 +79,8 @@
 
 \pgfplotsset{plot coordinates/math parser=false}
 
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
 
 
 \begin{document}
@@ -160,7 +161,7 @@
 		\centering
 		\resizebox{\textwidth}{!}{
 			\input{../plots/lanczos1_W.tex}}
-		\caption{Loss of orthogonality in Lanczos 1}\label{fig:lanczos1_W}
+		\caption{Loss of orthogonality in Lanczos 1. Note that $w_{k,\infty}$ is always shown, as the one used in testing for reorthogonalization (i.e. the projected one in the next step)}\label{fig:lanczos1_W}
 	\end{figure}
 	
 	\begin{figure}
@@ -231,7 +232,7 @@
 	 This update law of the $W_J$ matrix allows us to iteratively construct the matrix for $k=1,\dots j-1$ (stipulating that $w_{k,0} = 0$). Here we can assume, that $\psi_k$ and $\theta_{j,k}$ are just noise introduced by imperfect arithmetics, and as such can be stochastically modelled.
 	 
 \section{Eigenvalues of a tridiagonal matrix}
-
+\subsection{Characteristic polynomial}
 Suppose that a tridiagonal symmetric (real) matrix $T$ is given:
 
 $$T=\begin{pmatrix}
@@ -303,6 +304,87 @@ Hence for any given value of $x$, the resulting sequence of characteristic polyn
 	\caption{Evaluation of the characteristic polynomials ($p_j$ for $j=1,2,\dots,k$)}\label{alg:char-poly-eval}
 \end{algorithm2e}
 
+\subsection{Finding the kth eigenvalue}
+
+Just by finding the zeros of the characteristic polynomial using the bisection method for example, by repeatedly evaluating it. This costs only $\mathcal{O}(n\log{n})$, disregarding some of the technical difficulties. With this algorithm however we would not be able to tell which eigenvalue we have converged to. 
+
+For us to find a more useful algorithm we first have to remind ourselves of the Sturm sequence like property of the characteristic polynomials defined by
+ \autoref{eq:char-rec}.
+ \begin{theorem}[Sturm sequence property]
+ 	Suppose $T$ is such that $\{\beta_i\}_{i=1}^{n-1}$ contains no zeros. Then for any $j \in \{1,\ldots,n\}$, the eigenvalues of $T_j$ and $T_{j-1}$ interlace as follows:
+ 	$$\lambda_j(T_j) <\lambda_{j-1}(T_{j-1}) < \lambda_{j-1}(T_j) <\cdots< \lambda_2(T_j) <\lambda_1(T_{j-1}) < \lambda_1(T_j)$$.
+ \end{theorem}
+ 
+ This means that we can construct a hierarchy of the zeros of these polynomials and use information about all of their signs to tell how many zeros fall below a given value. \autoref{fig:charpoly-zero} nicely illustrates this structure and leads us to a couple of observations:
+ \begin{enumerate}
+ 	\item The
+ \end{enumerate}
+ 
+ \begin{figure}
+ 	\centering
+ 	\begin{tikzpicture}[line width=3pt]
+ 		% Define the list of lists
+ 		\def\listOfLists{{},{5},{3,6},{1.5,3.5,8},{1.3,2.5,4,8.5},{0.7,1.8,3,7,8.7},{0.3,1.4,2,4.5,8.4,9}}
+ 		
+ 		% Define the colors for alternating connections
+ 		\definecolor{color1}{RGB}{0, 0, 255}
+ 		\definecolor{color2}{RGB}{255, 0, 0}
+ 		\colorlet{linecolor}{color1}
+ 		% Define the vertical spacing between levels
+ 		\def\verticalSpacing{-0.65}
+ 		
+ 		% Initialize the y-coordinate
+ 		\pgfmathsetmacro{\ycoord}{0}
+ 		
+ 		% Loop through the list of lists
+ 		\newcounter{arraycard}
+ 		\foreach \level [count=\i] in \listOfLists {
+ 			% Get the length of the current \level
+ 			\setcounter{arraycard}{0}%
+ 			% Draw nodes for each element in the sublist
+ 			\foreach \x [count=\j] in \level {
+ 				\pgfmathparse{\ycoord + (\i - 1) * \verticalSpacing}
+ 				
+ 				\node[mark=square, draw, fill=black, inner sep=2pt] (node\i\j) at ($(\x, \pgfmathresult)$) {};
+ 			}
+ 			
+ 			% Connect nodes on the same level with alternating colors
+ 			
+ 			\foreach \x [count=\j] in \level {
+ 				\let\ycoord\pgfmathresult
+ 				\ifodd\j
+ 				\colorlet{linecolor}{color2}
+ 				\else
+ 				\colorlet{linecolor}{color1}
+ 				\fi
+ 				\ifnum\j>1
+ 				\draw[linecolor] (node\i\j) -- (node\i\the\numexpr\j-1\relax);
+ 				\fi
+ 				\stepcounter{arraycard}%
+ 			}
+ 			% Use \levelLength to access the length of the \level
+ 			%\node[above right] at (node\i\the\value{arraycard}) {\the\value{arraycard}\ elements};
+ 			\pgfmathparse{int(\i-1)}
+ 			\node[draw=none] (node\i0) at ($(0, \ycoord + \i* \verticalSpacing - 1 * \verticalSpacing)$) {};
+ 			\node (name\i) at ($(node\i0)+(-0.5,0)$) {$p_\pgfmathresult$};
+ 			\pgfmathparse{int(\the\value{arraycard}+1)}
+ 			\node (node\i\pgfmathresult) at ($(10, \ycoord + \i* \verticalSpacing - 1 * \verticalSpacing)$) {};
+ 			\draw[color2] (node\i1) --($(0, \ycoord + \i* \verticalSpacing - 1 * \verticalSpacing)$);
+ 			
+ 			\ifodd\the\value{arraycard}
+ 			\colorlet{linecolor}{color1}
+ 			\else
+ 			\colorlet{linecolor}{color2}
+ 			\fi
+ 			\pgfmathparse{int(\the\value{arraycard}+1)}
+ 			\draw[linecolor,->] (node\i\the\value{arraycard}) -- (node\i\pgfmathresult);
+ 		}
+ 	\end{tikzpicture}
+ 	
+ 	\caption{
+ 		Visualizing zeros of the different levels of characteristic polynomials and their interlaced zeros. The lines represent the real $x$ axis, indicating where the value of the polynomial is {\color{red}positive (red)} or {\color{blue}negative (blue)} or zero ($\blacksquare$)
+ 	}\label{fig:charpoly-zero}
+ \end{figure}
 \FloatBarrier
 \newpage
 \printbibliography
