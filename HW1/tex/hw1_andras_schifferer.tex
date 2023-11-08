@@ -315,10 +315,14 @@ For us to find a more useful algorithm we first have to remind ourselves of the 
  	$$\lambda_j(T_j) <\lambda_{j-1}(T_{j-1}) < \lambda_{j-1}(T_j) <\cdots< \lambda_2(T_j) <\lambda_1(T_{j-1}) < \lambda_1(T_j)$$.
  \end{theorem}
  
- This means that we can construct a hierarchy of the zeros of these polynomials and use information about all of their signs to tell how many zeros fall below a given value. \autoref{fig:charpoly-zero} nicely illustrates this structure and leads us to a couple of observations:
+ This means that we can construct a hierarchy of the zeros of these polynomials and use information about all of their signs to tell how many zeros fall below a given value. \autoref{fig:charpoly-zero} nicely illustrates this structure and leads us to a couple of observations. Let's denote the number of sign flips in the sequence of polynomilas (evaluated at a certain $x$) $p_n(x), p_{n-1}(x), \dots, p_1(x), p_0(x)$ by $s(x)$ . 
  \begin{enumerate}
- 	\item The
+ 	\item At the negative side as $x \to -\infty$, we see that since the leading term of the $j^{\mathrm{th}}$ polynomial is $\left(-1\right)^j x_j$, therefore $p_j \to \infty$, and hence the sign will be positive for all polynomials at a sufficiently low $x$, which results in $s(x)\to0$. On the flip side, for sufficiently large $x$ however $s(x)$ as the signs will alternate due to the $\left(-1\right)^j$ term.
+ 	\item Coming from negative $x$ values, between two eigenvalues, i.e. zeros of $p_n$, the number sign flips cannot change. This is due to the propery of interlaced zeros: if $p_j(x)$ flips in sign, then $p_{j+1}$ must have had a zero before that which flipped it, i.e. it will have the same sign as $p_j(x)$.
+ 	\item This leads to the last conclusion: $p_n$ introduces sign flips (because there is no $p_{n+1}$) at each of it's zeros, which are the eigenvalues.
  \end{enumerate}
+ 
+ Thereby we can conclude that $s(x)$ describes the number of eigenvalues of $T$, which are smaller than $x$.
  
  \begin{figure}
  	\centering
