@@ -57,11 +57,9 @@ for j=1:kmax
       w_k_inf_quasi(j+1)=max(abs(w(1:(end-1))));
       if w_k_inf_quasi(j+1)>delta
           fprintf("Reorthogonlaizing needed: %i\n", j)
-          where_update = abs(w(1:(end-1)))>delta;
-          z3 = 3/2*randn(size(w)).*eps;
-          w(where_update) = z3(where_update);
+          
 
-          full_reorth = 3;
+          full_reorth = 2;
       end
   end
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -77,8 +75,12 @@ for j=1:kmax
     [new_r, new_beta] = reorth(Q_k(:, 1:j), r, norm(r));
     r = new_r;
     beta(j+1) = new_beta;
-
+    
     full_reorth = full_reorth-1;
+    
+    %% Reducing the w-inf estimate, since supposedly the new vector is now orthogonal
+    z3 = 3/2*randn(size(w,1)-1,1);
+    w(1:(end-1)) = z3.*eps;
   end
 
 

@@ -1,10 +1,11 @@
 clear all
 addpath("../..")
 addpath("../NLAHW1_AFM/")
+addpath("../NLAHW1_Lanczos/")
 addpath("../../matlab2tikz/src/")
 close all
 
-A=mmread("Test.mtx");A_eigs=readmatrix("TestEig.txt");
+A=mmread("../NLAHW1_Lanczos/Test.mtx");A_eigs=readmatrix("../NLAHW1_Lanczos/TestEig.txt");
 %A = rand(7,7);A = (A+A')/2;A_eigs = eig(A);
 kmax = 900;
 [Q_k,T_k,r,err_ind,w_k_inf]=Lanczos1(A, kmax, rand(size(A,1), 1), max(max(A)));
