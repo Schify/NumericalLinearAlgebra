@@ -7,8 +7,8 @@ close all
 
 A=mmread("../NLAHW1_Lanczos/Test.mtx");A_eigs=readmatrix("../NLAHW1_Lanczos/TestEig.txt");
 %A = rand(7,7);A = (A+A')/2;A_eigs = eig(A);
-kmax = 900;
-[Q_k,T_k,r,err_ind,w_k_inf]=Lanczos1(A, kmax, rand(size(A,1), 1), max(max(A)));
+kmax = 200;
+[Q_k,T_k,r,err_ind,w_k_inf]=Lanczos2(A, kmax, rand(size(A,1), 1), max(max(A)));
 
 
 x0 = 1000; y0 = 300; width = 800; height = 250;
