@@ -1,10 +1,19 @@
-function num_eig = num_eigvals_smaller(x, alpha, beta)
+function num_eig = num_eigvals_smaller(x, alpha, beta, stable)
+if nargin < 4
+    stable = true;
+end
 % tells how many eigenvalues the tridiagonal matrix T has less than or
 % equal to x (has a size of k)
 % the evaluated char poly sequence has a size of  (k, n+1)
+if stable
+    qn = char_polys_eval_stable(x, alpha, beta);%here $q_i(x) = p_i(x)/p_{i-1}(x)$
+    num_eig = sum(qn<0, 2);
+
+else
     pn = char_polys_eval(x, alpha, beta);
     num_eig = count_flips(pn);
-    %the second term is to prevent the double counting of the zeros
+end
+%the second term is to prevent the double counting of the zeros
 
 end
 
