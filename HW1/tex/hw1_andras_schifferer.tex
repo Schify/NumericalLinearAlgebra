@@ -30,7 +30,7 @@
 \usepackage{xstring}
 \usepackage[]{pgfkeys}
 \usepackage{xfrac}
-\usepackage{minted}
+\usepackage[newfloat]{minted}
 \usetikzlibrary{external}
 \usetikzlibrary{calc,math}
 \tikzexternalize[prefix=extern/]
@@ -41,6 +41,8 @@
 \usepackage[ruled,vlined,linesnumbered,algo2e]{algorithm2e}
 \usepackage{wrapfig}
 \usepackage{subcaption}
+\newenvironment{code}{\captionsetup{type=listing}}{}
+\SetupFloatingEnvironment{listing}{name=Source Code}
 \graphicspath{../plots/}
 
 \usepackage{wasysym}
@@ -664,7 +666,7 @@ To be more optimal at recycling information, one could develop a recursive algor
 		\uElseIf{$\frac{b-a}{b} > \kappa$ \textbf{or} $|K| > 1$}{
 			$c = \frac{a+b}{2}$\\
 			\tcc{Using \autoref{alg:char-poly-eval} to evaluate $s(c)$ in $\mathcal{O}(j)$. Values are cached in reality}
-			\Return{\texttt{SetBisect}$\left(K \cap \Upsilon\left(s(a),s(c)\right),a,c, \alpha, \beta\right)\,$ $\cup\footnotemark\,$ \texttt{SetBisect}$\left(K \cap \Upsilon\left(s(c),s(b)\right),c, b, \alpha, \beta\right)$\tcp{Recursion}}
+			\Return{\texttt{SetBisect}$\left(K \cap \Upsilon\left(s(a),s(c)\right),a,c,\textsc{} \alpha, \beta\right)\,$ $\cup\footnotemark\,$ \texttt{SetBisect}$\left(K \cap \Upsilon\left(s(c),s(b)\right),c, b, \alpha, \beta\right)$\tcp{Recursion}}
 		}
 		\Else{\Return{$\left[\frac{a+b}{2}\right]$}\tcp{Eigenvalue resolved with $\frac{\kappa}{2}$ precision in this interval}}
 	}
@@ -672,6 +674,17 @@ To be more optimal at recycling information, one could develop a recursive algor
 	\caption{Finding a set $K$ eigenvalues of the tridiagonal matrix $T_j$ with $\kappa/2$ precision}\label{alg:eigfind-Tj-recursive}
 \end{algorithm2e}
 \footnotetext{Interpret $\cup$ as concatenation for arrays}
+
+\FloatBarrier
+\section{Atomic Force Microscopy}
+\begin{code}
+	\inputminted[mathescape,autogobble,breaklines, linenos,frame=lines]{matlab}{../tests/solve_afm.m}
+	\captionof{listing}{\texttt{solve\_afm.m}}
+	\label{code:solve-afm}
+\end{code}
+	
+
+
 
 \FloatBarrier
 \newpage

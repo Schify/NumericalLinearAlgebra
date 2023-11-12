@@ -20,14 +20,39 @@ alpha = full(diag(T_k));
 beta = full(diag(T_k,1));
 eigval_k(3, alpha,beta)
 
+%% Test on big eigvals
+% x = linspace(min(A_eigs)-1,max(A_eigs)+1,3000)';
+% y = num_eigvals_smaller(x,alpha, beta );
+% figure
+% hold on
+% plot(x,y)
+% xline(A_eigs, "r--");
+% hold off
+% 
+% figure
+% T_eigs = eigs(T_k);
 
-x = linspace(min(A_eigs)-1,max(A_eigs)+1,3000)';
+%% test on random matrix
+k =900;
+alpha = randn(k,1);
+beta = randn(k-1,1);
+T_k = diag(alpha)+diag(beta,1)+diag(beta,-1);
+mat_eig = eig(T_k);
+eigk = zeros(k, 1);
+for j = 1:k
+    eigk(j) = eigval_k(j, alpha, beta);
+end
+
+
+figure
+x = linspace(min(mat_eig)*1.1,max(mat_eig)*1.1,3000)';
 y = num_eigvals_smaller(x,alpha, beta );
 figure
 hold on
 plot(x,y)
-xline(A_eigs, "r--");
+
+plot(eigk, (1:k)-0.5, "x")
+xline(mat_eig, "r--");
+legend(["$s(x)$", "$\mu_i$", "$\texttt{eig(A)}$"], Interpreter="latex")
 hold off
 
-figure
-T_eigs = eigs(T_k);

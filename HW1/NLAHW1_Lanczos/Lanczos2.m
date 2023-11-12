@@ -1,5 +1,8 @@
 function [Q_k,T_k,r,err_ind,w_k_inf_quasi] = Lanczos2(A,kmax,r,nrm_A)
  
+if kmax == -1
+    kmax=size(A,1);
+end
 
 % INIT
 n=size(A,1);
