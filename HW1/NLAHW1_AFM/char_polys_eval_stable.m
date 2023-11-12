@@ -9,7 +9,7 @@ qns(:,2) = alpha(1)-x;
 for j = 3:n+1 % remember that pns = [p0; p1; p2; ... ; pn] while
     % beta=[beta1; beta2; ...; betan-1; (betan)] (the last element could be given but wont be used)
     qns(:,j) = (alpha(j-1)-x)...
-                -beta(j-2)^2./qns(:,j-2);
+                -beta(j-2)^2./qns(:,j-1);
 end
 
 end

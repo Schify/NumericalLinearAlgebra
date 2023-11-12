@@ -17,16 +17,16 @@ A = S_half_inv * U' * (K+K') * V *S_half_inv; % A is still symmertic,
 % $U S^{\frac{1}{2}} \bigl( \underbrace{S^{-\frac{1}{2}} U^\intercal K V S^{-\frac{1}{2}}}_{A} - \omega^2 I\bigr )S^{\frac{1}{2}} V^\intercal \delta \mathbf{u} = 0 $
 
 %% *Solving the eigenvalue problem with Lanczos*
-k= 100; 
+k= 300; 
 [Q_k,T_k,r,err_ind,w_k_inf] = Lanczos2(A,k,randn(size(A,1),1));%Lanczos2
 plot_W(Q_k'*Q_k - eye(size(Q_k,2)), w_k_inf, 1900, 100, 800,400)
 k = size(T_k, 1);
 
 alpha = diag(T_k);beta=diag(T_k, 1);
-eig_indicies = (0:60)'; % the smallest eigenvalues' indicies
+eig_indicies = (1:60)'; % the smallest eigenvalues' indicies
 eig_est = zeros(size(eig_indicies)); 
 for j = 1:length(eig_indicies)
-    eig_est(j) = eigval_k(eig_indicies(j), alpha, beta); 
+    eig_est(j) = eigval_k(eig_indicies(j)+2, alpha, beta); 
 end
 
 %%Checking against matlab eig fucntion

@@ -1,7 +1,9 @@
-function eig_est = eigval_k(k,alpha,beta)
+function eig_est = eigval_k(k,alpha,beta, stable)
 % finds the kth eigenvalue of a symmetric tridiagonal matrix
 n = size(alpha,1);
-
+if nargin<4
+    stable=true;
+end
 %using the Gershgorin circle theorem to find the range of possible
 %eigenvalues
 %the radia
@@ -17,7 +19,7 @@ b = max_eig_range;
 prec = 100*eps;
 while b-a > abs(b)*prec
     c = (a+b)/2;
-    c_eval = num_eigvals_smaller(c, alpha, beta);
+    c_eval = num_eigvals_smaller(c, alpha, beta, stable);
     if c_eval<k
         a = c;
     else
