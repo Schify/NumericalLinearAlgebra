@@ -13,7 +13,8 @@
 \usepackage{booktabs}
 \usepackage{csvsimple}
 \usepackage{etoolbox}
-\usepackage{biblatex}
+\usepackage[style=alphabetic]{biblatex}
+\usepackage{amsthm}
 \bibliography{refs.bib}
 %% the following commands are needed for some matlab2tikz features
 \usetikzlibrary{plotmarks}
@@ -58,6 +59,8 @@
 %\titleformat{\subsection}{\normalfont\large\bfseries}{Task \thesubsection}{1em}{}
 %\titleformat{\section}{\normalfont\Large\bfseries}{Assignment \thesection}{1em}{}
 %\titleformat{\subsubsection}{\normalfont\bfseries}{Question \thesubsubsection}{1em}{}
+\newcommand\mycommfont[1]{\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
 
 \newcommand{\stilltodo}[1]{{\color{red} UNFINISHED #1}}
 
@@ -155,7 +158,17 @@
 	\subsection{Lanczos1: 'practical' Lanczos}
 	% It is not practical because calculating Q*Q is a lot of effort
 	
-	
+	\begin{algorithm2e}[ht]
+		\SetAlgoNlRelativeSize{-1}
+		\caption{Reorthogonalization against all previous $\textbf{q}_i$}\label{alg:reorthogonalization}
+		\KwIn{$Q_k$: Matrix with quasi-orthonormal columns}
+		\KwIn{$\textbf{r}$: Vector to be reorthogonalized}
+		\KwOut{$\textbf{r}_{\text{new}}$: Reorthogonalized vector}
+		
+		$\textbf{r} \gets \textbf{r} - Q_{k-1} Q_{k-1}^\ast \textbf{r}$\\
+		$\alpha_{\text{loc}} \gets \textbf{q}_k^\ast \cdot r$\\
+		$\textbf{r}_{\text{new}} \gets \textbf{r} - \alpha_{\text{loc}}  \textbf{q}_k$\\
+	\end{algorithm2e}
 	
 	\begin{figure}
 		\centering
@@ -190,7 +203,7 @@
 		\beta_j\mathbf{q}_{j+1}=A\mathbf{q}_j-\alpha_j\mathbf{q}_j-\beta_{j-1}\mathbf{q}_{j-1} - \textbf{f}_j.
 	\end{equation}
 	This can be transformed in a similar fashion as before into 
-	\begin{equation}
+	\begin{equation}\label{eq:matLanczos-F}
 		AQ_{j}=Q_jT_j+\beta_{j}\mathbf{q}_{j+1}\mathbf{e}^{\ast} + F_j,
 	\end{equation}
 	where $F_j$ is a matrix collecting the error terms.
@@ -224,14 +237,215 @@
 		\alpha_k\mathbf{q}_j^*\mathbf{q}_k - \alpha_j\mathbf{q}_k^*\mathbf{q}_j + \beta_{k-1}\mathbf{q}_j^*\mathbf{q}_{k-1} - \beta_{j-1}\mathbf{q}_k^*\mathbf{q}_{j-1} + \mathbf{q}_j^*\textbf{f}_k  - \mathbf{q}_k^*\textbf{f}_j,
 	\end{equation}
 	where $\mathbf{q}_k^*A\mathbf{q}_j - \mathbf{q}_j^*A\mathbf{q}_k = 0$ thanks to the symmetry of $A$. Thereby
-	\begin{equation}
-		\beta_j w_{k,j+1} = \beta_k w_{j,k+1} = \left(\alpha_k - \alpha_j\right) w_{k,j} + \beta_{k-1} w_{j, k-1} - \beta_{j-1} w_{k,j-1} + \underbrace{\mathbf{q}_j^*\textbf{f}_k-\mathbf{q}_k^*\textbf{f}_j}_{\theta_{j,k} 
+	\begin{equation}\label{eq:w-update}
+		\beta_j w_{k,j+1} = 
+		\beta_k w_{j,k+1} + \left(\alpha_k - \alpha_j\right) w_{k,j} + \beta_{k-1} w_{j, k-1} - \beta_{j-1} w_{k,j-1} + \underbrace{\mathbf{q}_j^*\textbf{f}_k-\mathbf{q}_k^*\textbf{f}_j}_{\theta_{j,k} 
 		:=}.
 	\end{equation}
 	 
 	 This update law of the $W_J$ matrix allows us to iteratively construct the matrix for $k=1,\dots j-1$ (stipulating that $w_{k,0} = 0$). Here we can assume, that $\psi_k$ and $\theta_{j,k}$ are just noise introduced by imperfect arithmetics, and as such can be stochastically modelled.
 	 
+	 The algorithm can be losely descired as the following:
+	 \begin{itemize}
+	 	\item At any given moment the last two rows of $W_k$ are stored.
+	 	\item These two rows are used to calculate the next row in $W_j$ by iterating outwards from the first subdiagonal using \autoref{eq:w-update}
+	 	\begin{itemize}
+	 		\item the first subdiagonals contain only errors from floating point arithmetic so they are drawn as $\psi_{k}=\sqrt{n}\epsilon(\beta_{1}/\beta_{j}) z_2$,
+	 		\item the arithmetic error from the update using iteration is also random $\theta_{jk}=\epsilon(\beta_{j}+\beta_{k})z_1$ with $z_1\sim \mathcal{N}(0,.3)$.
+	 	\end{itemize}
+	 	\item If the new row indicates that a reorthogonalization is needed, we reorthogonalize both in this and the subsequent iteration step. Since this means that the elements of this row should be almost zero, we reroll the relevant offdiagonal values of the current $w_{*,j+1}$ row to $\epsilon z_3$, with $z_3\sim\mathcal{N}(0,3/2)$.
+	 \end{itemize}
+	 
+%	 You can take $\theta_{jk}=\epsilon(\beta_{j}+\beta_{k})z_1$ with $z_1\sim \mathcal{N}(0,.3)$ and $\psi_{k}=\sqrt{n}\epsilon(\beta_{1}/\beta_{j}) z_2$ with $z_2\sim \mathcal{N}(0,.6)$. You can update the selected elements in $w$ to $\epsilon z_3$, with $z_3\sim\mathcal{N}(0,3/2)$. You do not need to worry where these numbers come from.\\
+
+\begin{algorithm2e}[ht]
+	
+	\SetKwInOut{Input}{input}
+	\SetKwInOut{Output}{output}
+	\SetKw{Init}{init}{}{}
+	\SetAlgoLined
+	\Input{Linear, symmetric real operator $A$ on $\mathbb{R}$}
+	\Output{Approximately orthogonally similar tridiagonal $T\sim A$, given by diagonals $\mathbf{\alpha},\mathbf{\beta}$}
+	\Init{choose starting vector $\mathbf{r}_0$,$\beta_0:=\|\mathbf{r}_0\|$, $\mathbf{q}_0=0$, $W_0=\begin{bmatrix} 0 \end{bmatrix}$}\\
+	\For{$j=1,2,...$}{
+		$\mathbf{q}_j:=\mathbf{r}_{j-1}/\beta_{j-1}$\\
+		$\mathbf{v}_j=A\mathbf{q}_j-\beta_{j-1}\mathbf{q}_{j-1}$\\
+		$\alpha_j=\mathbf{v}_j^{\ast}\mathbf{q}_j$\\
+		$\mathbf{r}_j=\mathbf{v}_j-\alpha_j\mathbf{q}_j$\\
+		$\beta_j=\|\mathbf{r}_j\|$\\
+		\If{$j<k_{\text{max}}-1$ \textbf{and} $j>1$}{
+			$W_{j}, W_{j-1} \leftarrow \text{update\_w}(W_{j-1}, W_{j-2}, \alpha, \beta, n)$ \tcp{Updating $W$-prox with \autoref{alg:update_w}}
+			$\omega_{j,\infty} \leftarrow \max_{1\leq k \leq j-1}(\lvert W_j(k) \rvert)$\\
+			\If{$\omega_{j,\infty} > \delta$}{
+				\tcp{Reorthogonalization needed}
+				$\mathbf{r}_j, \beta_j \leftarrow \text{reorthogonalization}(Q_k(:, 1:j), \mathbf{r}_j, \beta_j)$ \tcp{Reorthogonalize}
+				$W_j(1:end-1) \leftarrow \epsilon z_3$ \tcp{Reroll off-diagonal values}
+			}
+		}
+	}
+	\caption{Lanczos2 with practically detected reorthogonalization (only one reorth for simplicity, in practice this migth differ)}\label{alg:LanczosQuasiOrtho}
+\end{algorithm2e}
+
+\begin{algorithm2e}[ht]
+	\SetKwInOut{Input}{input}
+	\SetKwInOut{Output}{output}
+	\Input{$w$: Current column vector of $W_j$}
+	\Input{$w_{\text{old}}$: Previous column vector of $W_{j-1}$}
+	\Input{$\alpha$: Vector of Lanczos $\alpha$ values}
+	\Input{$\beta$: Vector of Lanczos $\beta$ values}
+	\Input{$n$: Size of the matrix}
+	\Output{$w$: Column vector of $W_{j+1}$}
+	\Output{$w_{\text{old}}$: Updated column vector of $W_{j}$}
+	
+	\tcp{Add initial zeros for $k=0$}
+	$j \leftarrow$ size($w$, 1); 
+	$w \leftarrow$ [0; $w$]; 
+	$w_{\text{old}} \leftarrow$ [0; $w_{\text{old}}$]; 
+	$\beta \leftarrow$ [0; $\beta$]; 
+	$\alpha \leftarrow$ [0; $\alpha$]\\
+	$w_{\text{new}} \leftarrow {0}_{j+2}$ \tcp{Allocation}
+	
+	\tcp{The diagonal and off-diagonal elements in $W$}
+	$w_{\text{new}}(j+2) \leftarrow 1$ \tcp{Diagonal}
+	$w_{\text{new}}(j+1) \leftarrow \sqrt{n}\epsilon\beta(2)/\beta(j+1) \times (0.6 \times \text{randn}())$ \tcp{$\psi_{j}$ on the off-diagonal}
+	
+	\For{$k \leftarrow j$ \textbf{downto} $2$}{
+		\tcp{Because of the extension of the vectors, the loop runs a bit differently}
+		\tcp{$k$ here corresponds to $k+1$ in the report}
+		$\theta_{j,k} \leftarrow \epsilon(\beta(j+1)+\beta(k)) \times 0.3 \times \text{randn}()$ \tcp{$\theta_{j,k}$}
+		
+		$w_{\text{new}}(k) \leftarrow (\beta(k)w(k+1) + (\alpha(k)-\alpha(j+1))w(k) + \beta(k-1)w(k-1) - \beta(j)w_{\text{old}}(k) + \theta_{j,k})/\beta(j+1)$
+	}
+	
+	\tcp{Drop off the virtual zeros}
+	$w_{\text{old}} \leftarrow w(2:$end$)$\\
+	$w \leftarrow w_{\text{new}}(2:$end$)$
+	
+	\caption{Update $W_j$ (using more \texttt{Matlab} heavy notation, \texttt{randn()}$\sim \mathcal{N}(0,1)$)}\label{alg:update_w}
+\end{algorithm2e}
+
+
+\subsection{The unavoidability of orthogonality loss}
+\textit{Similar analysis has been performed by \textcite{paige-1980}, and some of the steps might be losely followed, as the assignment's formulas are proven.}
+
+To investigate the unavoidability of orthogonality loss let's look a bit deeper into the accumulation of the floating point arithmetic error. Suppose that $W_j:=I_j+U_j+U_j^{\ast}$ with $U_j$ strictly upper triangular. Suppose the columns of $U$ are given by $U=[\mathbf{u}_1,\ldots,\mathbf{u}_j]$.
+Then we can simply use the definition of $W_j$ to see that
+\begin{equation}
+	W_j = Q_j^\ast Q_j = Q_j^\ast \begin{bmatrix}
+		{\bf q}_1 &{\bf q}_2 &\dots &{\bf q}_j
+	\end{bmatrix} = \begin{bmatrix}
+	Q_j^\ast {\bf q}_1 &Q_j^\ast {\bf q}_2 &\dots &Q_j^\ast {\bf q}_j
+	\end{bmatrix}.
+\end{equation}
+Looking at the last column of this expression we can see that 
+\begin{equation}
+	Q_j^\ast {\bf q}_j = {\bf e}_j+ {\bf u}_j
+\end{equation}
+since the last column of $W_j$ has no component of the strictly lower triangular $U_j^\ast$. Similarly by looking at the second to last column of $W_j$ we see that 
+\begin{equation}
+	Q_j^\ast {\bf q}_{j-1} = {\bf e}_{j-1}+ {\bf u}_{j-1} + \begin{bmatrix}
+		0 & 0 & \dots & w_{j,j-1}
+	\end{bmatrix}^\intercal = {\bf e}_{j-1}+ {\bf u}_{j-1} + {\bf q}_{j-1}^\ast {\bf q}_j {\bf e}_j
+\end{equation}
+using the definition of the elements in $W_j$.
+
+Now take \autoref{eq:LanczosStep-f} and multiply it by $Q_j^\ast$ from the left so that we get 
+\begin{equation}\label{eq:lanc-step-fqj}
+	\beta_jQ_j^\ast\mathbf{q}_{j+1}=Q_j^\ast A\mathbf{q}_j-\alpha_jQ_j^\ast\mathbf{q}_j-\beta_{j-1}Q_j^\ast\mathbf{q}_{j-1} - Q_j^\ast\textbf{f}_j.
+\end{equation}
+In order to eliminate the $Q_j^\ast A\mathbf{q}_j$ term take \autoref{eq:matLanczos-F}'s (conjugate-)transpose and multiply it with $\textbf{q}_j$ fromt he right:
+\begin{equation}
+	Q_{j}^\ast A^\ast \textbf{q}_j  =T_j^\ast Q_j^\ast \textbf{q}_j +\beta_{j}\mathbf{e}_j\mathbf{q}_{j+1}^{\ast}\textbf{q}_j + F_j^\ast \textbf{q}_j
+\end{equation} 
+
+Since we assumed $A$ to be symmetic and real, and thereby also $T_k$, we can substitute into \autoref{eq:lanc-step-fqj} to obtain
+\begin{equation*}
+	\beta_jQ_j^\ast\mathbf{q}_{j+1}=T_j \left({\bf e}_j+ {\bf u}_j\right) +\beta_{j}\mathbf{e}\mathbf{q}_{j+1}^{\ast}\textbf{q}_j + F_j^\ast \textbf{q}_j-\alpha_j \left({\bf e}_j+ {\bf u}_j\right)-\beta_{j-1}\left({\bf e}_{j-1}+ {\bf u}_{j-1} + {\bf q}_{j-1}^\ast {\bf q}_j {\bf e}_j\right) - Q_j^\ast\textbf{f}_j.
+\end{equation*}
+Fortunately just from the definition of $T_j$ we can know that $T_j \textbf{e}_j = \alpha_{j} \textbf{e}_j + \beta_{j-1} \textbf{e}_{j-1}$, therefore we arrive at
+\begin{equation}\label{eq:error-accum}
+	\beta_jQ_{j}^{\ast}\mathbf{q}_{j+1}=T_{j}\mathbf{u}_j-\alpha_j\mathbf{u}_j-\beta_{j-1}\mathbf{u}_{j-1}+\underbrace{(F_j^{\ast}\mathbf{q_j}-Q_j^{\ast}\mathbf{f}_j)}_{\mathbf{g}_j:=}+\mathbf{e}_j(\beta_{j}\mathbf{q}_{j+1}^{\ast}\mathbf{q}_{j}-\beta_{j-1}\mathbf{q}_{j}^{\ast}\mathbf{q}_{j-1})
+\end{equation}
+
+This above relation comes from the L\'anczos step ultimately, and therefore could apply for any index up to $j$, but of course some dimensionalities would change in that case. Let's take $k<j$ (here of course $\textbf{u}_k \in \mathbb{R}^k$ or $\mathbb{C}^k$):
+\begin{equation*}
+	\beta_kQ_{k}^{\ast}\mathbf{q}_{k+1}=T_{k}\mathbf{u}_k-\alpha_k\mathbf{u}_k-\beta_{k-1}\mathbf{u}_{k-1}+(F_k^{\ast}\mathbf{q_k}-Q_k^{\ast}\mathbf{f}_k)+\mathbf{e}_k(\beta_{k}\mathbf{q}_{k+1}^{\ast}\mathbf{q}_{k}-\beta_{k-1}\mathbf{q}_{k}^{\ast}\mathbf{q}_{k-1})
+\end{equation*}
+where of course, due to the definition of $U_k$, $Q_{k}^{\ast}\mathbf{q}_{k+1} = \textbf{u}_{k+1}$. Since this is an upper triangular we can always append $j-k$ zeros below the vectors in the equation, so that the dimension agrees with \autoref{eq:error-accum}, and thereby the extended $u_{k+1} $ corresponds to a column in $U_j$. After this extension for example $T_{k}\mathbf{u}_k$ becomes $T_{j}\mathbf{u}_k$, where the second $u_k$ is of dimension $j$, in contrast with the first $u_k$. The result of these two expressions also only differs in the number of end zeros, which ensures further consistency of our manipulations. Therefore now we will use this extended equation as 
+\begin{equation}\label{eq:inbetween-error-accum}
+	0 =T_{j}\mathbf{u}_k\underbrace{-\overbrace{\beta_k \mathbf{u}_{k+1}}^{Q_{k}^{\ast}\mathbf{q}_{k+1}}-\alpha_k\mathbf{u}_k-\beta_{k-1}\mathbf{u}_{k-1}}_{=-U_j T_j \textbf{e}_k}+\underbrace{(F_k^{\ast}\mathbf{q_k}-Q_k^{\ast}\mathbf{f}_k)+\mathbf{e}_k(\beta_{k}\mathbf{q}_{k+1}^{\ast}\mathbf{q}_{k}-\beta_{k-1}\mathbf{q}_{k}^{\ast}\mathbf{q}_{k-1})}_{\tilde{\textbf{g}}_k := }
+\end{equation}
+with $\tilde{\textbf{g}}_k$ extending not just by the padding zeros to conform to the new dimensions, but also including the numerical errors that remain after orthogonalizing consecutive vectors as relating to the operations ($\beta_{k-1}\textbf{q}_k^\ast \textbf{q}_{k-1}$ and such)
+
+We can collect \autoref{eq:inbetween-error-accum} valid for $1 \leq k < j$, and \autoref{eq:inbetween-error-accum}, and stack them column by column into matrices. Notice how the left hand side will collect the end error that results from the inperfect approximation of the matrix. This comes from the $j^{\mathrm{th}}$ step, and for all other purposes the equations are the same.
+This means that 
+\begin{equation*}
+	\begin{bmatrix}
+		0 & 0 & \dots & \beta_kQ_{k}^{\ast}\mathbf{q}_{k+1}
+	\end{bmatrix} 
+	= 
+	T_j \underbrace{\begin{bmatrix}
+		\textbf{u}_1 &
+		\textbf{u}_2 &
+		\dots &
+		\textbf{u}_j
+	\end{bmatrix}}_{U_j}
+	- U_j T_j \underbrace{\begin{bmatrix}
+		\textbf{e}_1 &
+		\textbf{e}_2 &
+		\dots &
+		\textbf{e}_j
+	\end{bmatrix}}_{I_j}
+	+ \underbrace{
+	\begin{bmatrix}
+		\tilde{\textbf{g}}_1 &
+		\tilde{\textbf{g}}_2 &
+		\dots &
+		\tilde{\textbf{g}}_j
+	\end{bmatrix}
+	}_{G_j:=}
+\end{equation*}
+which results in the compact formula as follows:
+\begin{equation}\label{eq:full-orth-loss}
+	\beta_j Q_j^\ast \textbf{q}_{j+1} \textbf{e}_j^\ast = T_j U_j - U_j T_j + G_j 
+\end{equation}
+
+Now we'll go on to prove Paige's lemma.
+\begin{lemma}[Paige, 1971, see more in \autocite{paige-1980}]\label{lemma:paige}
+	Let $T_j$ denote the Lanczos matrix for some given A at iteration j. Suppose $T_j$ has an eigendecomposition $T_jS_j=S_j\Theta_j$, with associated Ritz vectors $Y=Q_jS_j=Q_j[\mathbf{s}_1,\dots,\mathbf{s}_j]$. Say $s_{ji}=\mathbf{e}_j^{\ast}\mathbf{s}_i$. Let
+	$(\theta_i , \textbf{y}_i)$ be a Ritz pair at this iteration for $T_j$. Define 
+	\begin{equation}\label{eq:betaij}
+		\beta_{ji} := \|A\textbf{y}_i - \theta_i \textbf{y}_i\|_2=\beta_j|s_{ji}|
+	\end{equation}
+	Then
+	\begin{equation}\label{eq:eig-orth-loss}
+		|\textbf{y}_i^{\ast}\textbf{q}_{j+1}| =\frac{|\gamma_{ii}|}{\beta_{ji}}
+	\end{equation}
+	with $\gamma_{ii}=\mathbf{s}_i^{\ast}G_{j}\mathbf{s}_i\approx\epsilon\|A\|$.
+\end{lemma}
+\begin{proof}
+	By using the definition of the eigenvectors of $T_j$ and \autoref{eq:matLanczos} (so thereby ignoring the floating point operations' error)
+	\begin{equation*}
+		A \textbf{y}_i - \theta_i \textbf{y}_i = A Q_j \textbf{s}_i - Q_j \theta_i s_i = \left(A Q_j - Q_j T_j  \right) \textbf{s}_i = \beta_j \textbf{q}_{j+1} \textbf{e}_j^\ast \textbf{s}_i
+	\end{equation*}
+	Taking the norm we see that \autoref{eq:betaij} holds true as
+	\begin{equation*}
+		\left\lVert A \textbf{y}_i - \theta_i \textbf{y}_i \right\rVert =\left\lVert \beta_{j} \textbf{q}_{j+1} \textbf{e}_j^\ast \textbf{s}_i \right\rVert =\left\lVert \textbf{q}_{j+1} \textbf{y}_i \right\rVert  \beta_{j} \left|s_{i,j}\right| = \beta_{j} \left|s_{i,j}\right| =: \beta_{ji}
+	\end{equation*}
+	thanks to $\beta_j\geq 0$ (due to it being defined as the norm of a vector), and $q_{j+1}$ being a normalized.
+	
+	Next we can reformulate \autoref{eq:full-orth-loss} by multiplying it with $\textbf{s}_i^\ast$ from the left and $\textbf{s}_i$ from the right
+	\begin{equation*}
+		\beta_j \underbrace{\textbf{s}_i^\ast Q_j^\ast}_{\textbf{y}_i^\ast} \textbf{q}_{j+1} \underbrace{\textbf{e}_j^\ast\textbf{s}_i}_{s_{ji}} = \underbrace{\textbf{s}_i^\ast T_j U_j \textbf{s}_i - \textbf{s}_i^\ast U_j T_j \textbf{s}_i}_{=0} + \underbrace{\textbf{s}_i^\ast G_j \textbf{s}_i}_{\gamma_{ii}},
+	\end{equation*}
+	where again from the definition of the eigenvectors $\textbf{s}_i^\ast T_j U_j \textbf{s}_i - \textbf{s}_i^\ast U_j T_j \textbf{s}_i=\theta_i \textbf{s}_i^\ast U_j \textbf{s}_i - \textbf{s}_i^\ast U_j \textbf{s}_i \theta_i = 0$ (with real eigenvalues or matrices), which results in \autoref{eq:eig-orth-loss} after reaarangement. Since $G_j$ collects all the numerical uncertainties of the procedure at a given step it stands to reason that $\gamma_{ii} \approx \epsilon\left\lVert A \right\rVert$.
+	
+\end{proof}
+
+Using \autoref{lemma:paige} we can see that those Ritz pairs who are closely approximating, meaning they have low error in $\beta_{ji} := \|A\textbf{y}_i - \theta_i \textbf{y}_i\|_2$, will correspond to a high $\left|\textbf{y}_i^{\ast}\textbf{q}_{j+1}\right|$. On the other side for those pairs which are far from converginfg this will be high. This means that $\textbf{q}_{k+1}$ only has high components in the well converged Ritz vectors' directions. This means that the subspace's orthogonality is lost in these directions for the next $q_{k+1}$, as $y_i = Q_k s_i \rightarrow y_i \in \mathrm{col}\left(Q_k\right)$.
+
 \section{Eigenvalues of a tridiagonal matrix}
+The ideas presented here are, as presumably the assignment is as well, losely based on the fundamental paper of \textcite{givens-eig} and later work of \textcite{sturm-ortega1960}.
 \subsection{Characteristic polynomial}
 Suppose that a tridiagonal symmetric (real) matrix $T$ is given:
 
@@ -294,7 +508,7 @@ Hence for any given value of $x$, the resulting sequence of characteristic polyn
 	\SetKwInOut{Output}{output}
 	\SetKw{Init}{init}{}{}
 	\SetAlgoLined
-	\Input{Real symmetric tridiagonal matrix $A\in\mathbb{R}^{n\times n}$, given by diagonals $\mathbf{\alpha},\mathbf{\beta}$, $x$ real constant}
+	\Input{Real symmetric tridiagonal matrix $T_j\in\mathbb{R}^{j\times j}$, given by diagonals $\mathbf{\alpha},\mathbf{\beta}$, $x$ real constant}
 	\Output{$\left\{p_j\right\}_{j=0}^n$ vector of the values of the characteristic polynomials evaluated at $x$}
 	\Init{Allocate the $\left\{p_j\right\}_{j=0}^n$ vector, set the trivial cases: $p_0=1$, $p_1=\alpha_1-x$}\\
 	\For{$j=2,3,...,n$}{
@@ -304,7 +518,8 @@ Hence for any given value of $x$, the resulting sequence of characteristic polyn
 	\caption{Evaluation of the characteristic polynomials ($p_j$ for $j=1,2,\dots,k$)}\label{alg:char-poly-eval}
 \end{algorithm2e}
 
-\subsection{Finding the kth eigenvalue}
+
+\subsection{Finding the $k^{\mathrm{th}}$ eigenvalue}
 
 Just by finding the zeros of the characteristic polynomial using the bisection method for example, by repeatedly evaluating it. This costs only $\mathcal{O}(n\log{n})$, disregarding some of the technical difficulties. With this algorithm however we would not be able to tell which eigenvalue we have converged to. 
 
@@ -315,16 +530,7 @@ For us to find a more useful algorithm we first have to remind ourselves of the 
  	$$\lambda_j(T_j) <\lambda_{j-1}(T_{j-1}) < \lambda_{j-1}(T_j) <\cdots< \lambda_2(T_j) <\lambda_1(T_{j-1}) < \lambda_1(T_j)$$.
  \end{theorem}
  
- This means that we can construct a hierarchy of the zeros of these polynomials and use information about all of their signs to tell how many zeros fall below a given value. \autoref{fig:charpoly-zero} nicely illustrates this structure and leads us to a couple of observations. Let's denote the number of sign flips in the sequence of polynomilas (evaluated at a certain $x$) $p_n(x), p_{n-1}(x), \dots, p_1(x), p_0(x)$ by $s(x)$ . 
- \begin{enumerate}
- 	\item At the negative side as $x \to -\infty$, we see that since the leading term of the $j^{\mathrm{th}}$ polynomial is $\left(-1\right)^j x_j$, therefore $p_j \to \infty$, and hence the sign will be positive for all polynomials at a sufficiently low $x$, which results in $s(x)\to0$. On the flip side, for sufficiently large $x$ however $s(x)$ as the signs will alternate due to the $\left(-1\right)^j$ term.
- 	\item Coming from negative $x$ values, between two eigenvalues, i.e. zeros of $p_n$, the number sign flips cannot change. This is due to the propery of interlaced zeros: if $p_j(x)$ flips in sign, then $p_{j+1}$ must have had a zero before that which flipped it, i.e. it will have the same sign as $p_j(x)$.
- 	\item This leads to the last conclusion: $p_n$ introduces sign flips (because there is no $p_{n+1}$) at each of it's zeros, which are the eigenvalues.
- \end{enumerate}
- 
- Thereby we can conclude that $s(x)$ describes the number of eigenvalues of $T$, which are smaller than $x$.
- 
- \begin{figure}
+  \begin{figure}[h!]
  	\centering
  	\begin{tikzpicture}[line width=3pt]
  		% Define the list of lists
@@ -389,6 +595,84 @@ For us to find a more useful algorithm we first have to remind ourselves of the 
  		Visualizing zeros of the different levels of characteristic polynomials and their interlaced zeros. The lines represent the real $x$ axis, indicating where the value of the polynomial is {\color{red}positive (red)} or {\color{blue}negative (blue)} or zero ($\blacksquare$)
  	}\label{fig:charpoly-zero}
  \end{figure}
+ 
+ This means that we can construct a hierarchy of the zeros of these polynomials and use information about all of their signs to tell how many zeros fall below a given value. \autoref{fig:charpoly-zero} nicely illustrates this structure and leads us to a couple of observations. Let's denote the number of sign flips in the sequence of polynomilas (evaluated at a certain $x$) $p_n(x), p_{n-1}(x), \dots, p_1(x), p_0(x)$ by $s(x)$ . 
+ \begin{enumerate}
+ 	\item At the negative side as $x \to -\infty$, we see that since the leading term of the $j^{\mathrm{th}}$ polynomial is $\left(-1\right)^j x_j$, therefore $p_j \to \infty$, and hence the sign will be positive for all polynomials at a sufficiently low $x$, which results in $s(x)\to0$. On the flip side, for sufficiently large $x$ however $s(x)$ as the signs will alternate due to the $\left(-1\right)^j$ term.
+ 	\item Coming from negative $x$ values, between two eigenvalues, i.e. zeros of $p_n$, the number sign flips cannot change. This is due to the propery of interlaced zeros: if $p_j(x)$ flips in sign, then $p_{j+1}$ must have had a zero before that which flipped it, i.e. it will have the same sign as $p_j(x)$.
+ 	\item This leads to the last conclusion: $p_n$ introduces sign flips (because there is no $p_{n+1}$) at each of it's zeros, which are the eigenvalues.
+ \end{enumerate}
+ 
+ Thereby we can conclude that $s(x)$ describes the number of eigenvalues of $T$, which are smaller than $x$. This leads to an algorithm based on the idea of the bisection method to find $\lambda_k = \inf_{x} \left\lbrace x | s(x)=k\right\rbrace$, which will correspond to the $k^{\mathrm{th}}$ eigenvalue of $T_j$.
+ 
+ \begin{algorithm2e}[ht]
+ 	
+ 	\SetKwInOut{Input}{input}
+ 	\SetKwInOut{Output}{output}
+ 	\SetKw{Init}{init}{}{}
+ 	\SetAlgoLined
+ 	\Input{Real symmetric tridiagonal matrix $T_j\in\mathbb{R}^{j\times j}$, given by diagonals $\mathbf{\alpha},\mathbf{\beta}$, $k$ index ($k\leq j$)}
+ 	\Output{$\lambda_k$ eigenvalue of $T_j$}
+ 	\Init{$\beta_0 = \beta_{j} = 0$}\\
+ 	\tcc{Lower and upper bounds of the eigenvalues using the Gershgorin circle theorem}
+ 	$R_i = \left|\beta{i-1}\right|+\left|\beta{i}\right|$ \textbf{for} $i=1,2,\dots,j$\\
+ 	$a = \min_{1\leq i \leq j}{\left(\alpha_{i}-R_i\right)}$\\
+ 	$b = \max_{1\leq i \leq j}{\left(\alpha_{i}+R_i\right)}$\\
+ 	\tcc{Bisection method}
+ 	\While{$\frac{b-a}{b} > \kappa$}{
+ 		$c = \frac{a+b}{2}$\\
+ 		\tcc{Using \autoref{alg:char-poly-eval} to evaluate $s(c)$ in $\mathcal{O}(j)$}
+ 		\uIf{$s(c, \alpha, \beta) < k$}{$a=c$}
+ 		\Else{$b=c$}
+ 	}
+ 	$\lambda_k = \frac{a+b}{2}$
+ 	\caption{Finding the $k^{\mathrm{th}}$ eigenvalue of the tridiagonal matrix $T_j$ with $\kappa/2$ precision}\label{alg:eigfind-Tj}
+ \end{algorithm2e}
+ 
+Note that if a $\beta_l$ is zero, that will break up the matrix into two blocks. This leads to the natural conclusion that in case of zero betas we can just recursively apply the algorithm. In a slightly more sophisticated fashion we could generalize the algorithm \autoref{alg:eigfind-Tj} so that it searches the blocks separately until out of $b$ blocks you find the one the $k^{\mathrm{th}}$ eigenvalue of the whole matrix, i.e. the $b$ blocks collectively have $k-1$ less eigenvalues smaller.
+
+\subsubsection*{Finding mutliple eigenvalues at the same time}
+
+To be more optimal at recycling information, one could develop a recursive algorithm for calculating a set of desired eigenvalues, where each evaluation of $s(x)$ is used to its maximal potential. \autoref{alg:eigfind-Tj-recursive} descirbes such an algorithm. Here let us denote the set of whole numbers between $a$ and $b$ ($a<b$) with 
+\begin{equation*}
+	\Upsilon(a,b) = \left\lbrace a, a+1, a+2, \dots b-1, b\right\rbrace
+\end{equation*}
+
+\begin{algorithm2e}[ht]
+	
+	\SetKwInOut{Input}{input}
+	\SetKwInOut{Output}{output}
+	\SetKw{Init}{init}{}{}
+	\SetAlgoLined
+	\Input{Real symmetric tridiagonal matrix $T_j\in\mathbb{R}^{j\times j}$, given by diagonals $\mathbf{\alpha},\mathbf{\beta}$, $K$ set of integer indicies}
+	\Output{$\left[\lambda_k\right]_{k \in K}$ eigenvalues of $T_j$, trying to preserve multiplicity}
+	\Init{$\beta_0 = \beta_{j} = 0$}\\
+	\tcc{Lower and upper bounds of the eigenvalues using the Gershgorin circle theorem}
+	$R_i = \left|\beta{i-1}\right|+\left|\beta{i}\right|$ \textbf{for} $i=1,2,\dots,j$\\
+	$a = \min_{1\leq i \leq j}{\left(\alpha_{i}-R_i\right)}$\\
+	$b = \max_{1\leq i \leq j}{\left(\alpha_{i}+R_i\right)}$\\
+	\Return{\texttt{SetBisect}$\left(K, a, b,\alpha, \beta\right)$}\\
+	\tcc{Recursive bisection method}
+	\SetKwFunction{FMain}{SetBisect}
+	\SetKwProg{Fn}{Function}{:}{}
+	\Fn{\FMain{$K, a, b, \alpha, \beta$}}{
+		\uIf{$|K|=0$}{\Return{$[\quad]$\tcp{No eigenvalues in this interval to be found}}}
+		\uElseIf{$\frac{b-a}{b} < 2\epsilon$}{
+			\tcp{The eigenvalues could not be resolved any further}
+			\Return{$\underbrace{\left[\frac{a+b}{2},\,\frac{a+b}{2},\,\dots,\frac{a+b}{2}\right]}_{\left|K\right| \,\mathrm{ elements}}$}
+		}
+		\uElseIf{$\frac{b-a}{b} > \kappa$ \textbf{or} $|K| > 1$}{
+			$c = \frac{a+b}{2}$\\
+			\tcc{Using \autoref{alg:char-poly-eval} to evaluate $s(c)$ in $\mathcal{O}(j)$. Values are cached in reality}
+			\Return{\texttt{SetBisect}$\left(K \cap \Upsilon\left(s(a),s(c)\right),a,c, \alpha, \beta\right)\,$ $\cup\footnotemark\,$ \texttt{SetBisect}$\left(K \cap \Upsilon\left(s(c),s(b)\right),c, b, \alpha, \beta\right)$\tcp{Recursion}}
+		}
+		\Else{\Return{$\left[\frac{a+b}{2}\right]$}\tcp{Eigenvalue resolved with $\frac{\kappa}{2}$ precision in this interval}}
+	}
+	\textbf{End Function}
+	\caption{Finding a set $K$ eigenvalues of the tridiagonal matrix $T_j$ with $\kappa/2$ precision}\label{alg:eigfind-Tj-recursive}
+\end{algorithm2e}
+\footnotetext{Interpret $\cup$ as concatenation for arrays}
+
 \FloatBarrier
 \newpage
 \printbibliography
