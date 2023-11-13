@@ -6,11 +6,12 @@ end
 
 % INIT
 n=size(A,1);
-eta = 0*((eps)^(3/4))/sqrt(kmax);   % intermed. orth level
-delta = sqrt(eps/kmax);         % threshold \delta for semi-orthogonality
-reorth_prev = 1;                % RECOMMENDED: reorth. against prev 2 vectors
+eta = ((eps)^(3/4))/sqrt(kmax)/100;   % intermed. orth level
+delta = sqrt(eps/kmax)/10;         % threshold \delta for semi-orthogonality
+reorth_prev = 2;                % RECOMMENDED: reorth. against prev 2 vectors
                                 % you can turn this off, but results can be
                                 % quite bad
+indicies = [];
 err_ind = 0;                    % output error flag
 
 %roundoff err. estim.
@@ -60,9 +61,16 @@ for j=1:kmax
       w_k_inf_quasi(j+1)=max(abs(w(1:(end-1))));
       if w_k_inf_quasi(j+1)>delta
           fprintf("Reorthogonlaizing needed: %i\n", j)
-          
-
-          full_reorth = 2;
+          new_indicies = find_L(abs(Q_k(:, 1:j-1)'*r./norm(r)),abs(w), delta, eta);
+          if isempty(indicies)
+              indicies = new_indicies;
+          else
+              indicies = reshape(union(indicies, new_indicies), 1,[]);
+          end
+          display(indicies)
+          figure
+          plot_Qq(Q_k(:,1:j),j,norm(r),r,eta,delta, abs(w), new_indicies)
+          full_reorth = reorth_prev;
       end
   end
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,17 +81,21 @@ for j=1:kmax
   % detected
   
   % Lanczos1.m & Lanczos2.m     : full reorth (see int full_reorth)
-  if full_reorth>0 && j>2
+  if full_reorth>0 && j>2 && j<kmax-1
     %reorthogonlaize q_j
-    [new_r, new_beta] = reorth(Q_k(:, 1:j), r, norm(r), delta, eta);
+    %Q_k, r,norm_r, delta, eta
+    [new_r, new_beta] = reorth(Q_k(:, 1:j), r, norm(r), indicies);
     r = new_r;
     beta(j+1) = new_beta;
     
     full_reorth = full_reorth-1;
     
     %% Reducing the w-inf estimate, since supposedly the new vector is now orthogonal
-    z3 = 3/2*randn(size(w,1)-1,1);
-    w(1:(end-1)) = z3.*eps;
+    z3 = 3/2*randn(size(w,1)+2,1);
+    w(indicies) = z3(indicies).*eps;
+    if full_reorth ==0 
+        indicies = [];
+    end
   end
 
 
@@ -125,20 +137,27 @@ function [w,w_old] = update_w(w,w_old,alpha,beta, n)
     w     = w_new(2:end);
 end
 
-function [rnew, nrmnew] = reorth(Q_k, r,norm_r, delta, eta)
-    indicies = find_L(Q_k(:,1:(end-1))'*r/norm_r, delta, eta);
-    r = r - Q_k(:,indicies)*(Q_k(:,indicies)'*r);
-    alpha_loc = Q_k(:,end)'*r;
+function [rnew, nrmnew, indicies] = reorth(Q_k, r,norm_r, indicies)
+    Qr = Q_k(:,indicies)'*r;
+%     indicies = find_L(Qq,w, delta, eta);
+
+    if isempty(indicies)
+        alpha_loc = 0;
+    else
+        r = r - Q_k(:,indicies)*Qr;
+        alpha_loc = Q_k(:,end)'*r;
+    end
     rnew = r - alpha_loc*Q_k(:,end);
     nrmnew = norm(rnew);
 end
 
-function indicies = find_L(x, delta, eta)
+function indicies = find_L(x, w, delta, eta)
     if eta >= delta
         error('eta should be less than delta');
     end
-
-    above_eta   = x > eta;
+    x = abs(x);
+    w = abs(w(1:length(x)));
+    above_eta   = w > eta;
     %finding contiguous intervals where eta<x
     interval_start = find(and(not([false; above_eta(1:end-1)]),...
                                 above_eta)); %where could an interval start (before no, now yes)

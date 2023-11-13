@@ -440,6 +440,28 @@ This discussion therefore motivates Lanczos3 as an algorithm in the following fo
 	\item For each $\mathbf{q}_i\in\mathcal{L}$, add the vectors $\mathbf{q}_{i-s_1},\mathbf{q}_{i-s_1+1},\ldots,\mathbf{q}_{i},\ldots,\mathbf{q}_{i+s_2-1},\mathbf{q}_{i+s_2}$ s.t. $\mathbf{q}_{i-s_1}$ and $\mathbf{q}_{i+s_2}$ are the first vectors to the left and right of $\mathbf{q}_{i}$ for which $|w_{i-s_1,j+1}|,|w_{i-s_2,j+1}|\leq\eta$. You can take $\eta=\epsilon^{3/4}/\sqrt{j_{\text{max}}}$. 
 \end{enumerate}
 
+\subsection*{Implementation}
+
+While Lanczos3 has been implemented, but it still seems lacking in convergence properties as seen in \autoref{fig:lanczos3_W}. For some reason the estimate of $w_{k,\infty}$ seems to stabilize, and fails to detect losses of stability. The problem seems to arise from the vicinity of the diagonal, as that is where the heuristic most seriously underestimates the error.
+
+One tweak that the algorithm had to undergo in comparison with the previous ones, is that since we want to repeatedly orthogonalize, we must perserve the previous indicies as well, and orthogonalize with them too, even if in this iteration the conditions are not met for them. This is again due to the residual error spreading from the older vectors. One step of index selection is visualized in \autoref{fig:lanczos3_Qq}.
+
+To make the whole thing work $\eta$ and $\delta$ were modified to $\tilde{\eta} = \eta/100$ and $\tilde{\delta} = \delta/10$. 
+
+\begin{figure}
+	\centering
+	\resizebox{\textwidth}{!}{
+		\input{../plots/lanczos3_W.tex}}
+	\caption{Loss of orthogonality in Lanczos 3. Note that $w_{k,\infty}$ is the proxy value generated throughout the heuristicv. The line for delta corresponds to the theoretical value not the one actually used which is one tenth of that.}\label{fig:lanczos3_W}
+\end{figure}
+
+\begin{figure}[h!]
+	\centering
+	\resizebox{0.8\textwidth}{!}{
+		\input{../plots/lanczos3_Qq.tex}}
+	\caption{Loss of orthogonality in Lanczos 3, demonstrated by $\left|Q_j^\ast \textbf{q}_j\right|$ (elementwise absolute value for the logplot). This is another run of the algorithm so values might not correspond to those previously presented (there is an element of randomness even in $\textbf{q}_0$ after all). Note that while this is a particular case the shape of this plot would be roughly the same for all such steps. The selected indicies are denoted with magenta on the plot. The lower horizontal line is $\tilde{\eta}$, while the higher one is $\tilde{\delta}$.}\label{fig:lanczos3_Qq}
+\end{figure}
+
 \subsection{The unavoidability of orthogonality loss}
 \textit{Similar analysis has been performed by \textcite{paige-1980}, and some of the steps might be losely followed, as the assignment's formulas are proven.}
 
