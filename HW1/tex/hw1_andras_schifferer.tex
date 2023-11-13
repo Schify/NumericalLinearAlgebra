@@ -79,7 +79,7 @@
 \makeatother
 \newcommand{\diff}{\mathrm{d}}
 \author{Andr\'as Schifferer, r0915705}
-\title{Numerical Linear Algebra [H03G1A]\\{\LARGE HW 1}}
+\title{Numerical Linear Algebra [H03G1A]\\{\LARGE HW1}\\{\large Practical L\'anczos method}}
 \date{\today} 
 
 \pgfplotsset{plot coordinates/math parser=false}
@@ -117,7 +117,7 @@
 			$\mathbf{r}_j=\mathbf{v}_j-\alpha_j\mathbf{q}_j$\\
 			$\beta_j=\|\mathbf{r}_j\|$\\
 		}
-		\caption{Lanczos in exact arithmetic}\label{alg:Lanczos}
+		\caption{Lanczos in exact arithmetic (Lanczos0)}\label{alg:Lanczos0}
 	\end{algorithm2e}\\
 	
 	The matrix $T$ then has the form 
@@ -128,7 +128,7 @@
 		0&&\beta_{j-2}&\alpha_{j-1}&\beta_{j-1}\\
 		0&\cdots&0&\beta_{j-1}&\alpha_{j}\\
 	\end{pmatrix}$$
-	One step in the main loop of \autoref{alg:Lanczos} is called a Lanczos step, and is usually written as
+	One step in the main loop of \autoref{alg:Lanczos0} is called a Lanczos step, and is usually written as
 	\begin{equation}\label{eq:LanczosStep}
 		\beta_j\mathbf{q}_{j+1}=A\mathbf{q}_j-\alpha_j\mathbf{q}_j-\beta_{j-1}\mathbf{q}_{j-1}.
 	\end{equation}
@@ -141,7 +141,7 @@
 	In exact arithmetic the above is a great procedure for tridiagonalization. Numerically this is
 	not the case unfortunately, as the orthogonality of $Q$ gets diminished by numerical errors.
 	
-	\subsection{Lanczos0: 'theoretical' Lanczos}
+	\subsection{Lanczos0: 'theoretical' Lanczos' problems}
 	
 	The theoretical Lanczos algorithm (hereby reffered to as Lanczos0) will lose stability after only a small number of iterations, as examplified in \autoref{fig:lanczos0_W}
 	\begin{figure}
@@ -150,28 +150,90 @@
 		\input{../plots/lanczos0_W.tex}}
 		\caption{Loss of orthogonality in Lanczos 0}\label{fig:lanczos0_W}
 	\end{figure}
-	We can see that orthogonality is rapidlly lost at about iteration 20, and after that point a significant part of the former vectors are no longer orthogonal to the new ones.
 	
-	This can be further corrobarated by the convergence of the Ritz values as seen in \autoref{fig:lanczos0_W_ritz}. Note that the test matrix (provided in \texttt{Test.mtx}) only has real eigenvalues more than or equal to one. We can see that in 
-	comparison with the better performing Lanczos1 algorithm (to be discussed later) where the Ritz values seem to be doing a good job approximating the spectrum of eigenvalues (in \autoref{fig:lanczos1_W_ritz}). In contrast Lanczos0 has trouble fully covering the eigenvalues in the Test matrix. Even at higher iteration numbers (i.e. a larger number of Ritz values) sometimes a spurious Ritz value appears, for example between the two largest eigenvalues at $j=39$. This might be explained by the last vector having a too high component parallel to the eigenvector corresponding to a larger eigenvalue. Therefore this might change the eigenvalues of $T_k$, which results in a bad quality approximation of the spectrum.
+	 The figure uses the "orthogonality matrix" $W_j$, which is hereby defined as
+	\begin{equation}
+		W_j = Q_j^\ast Q_j,
+	\end{equation}
+	where the higher the values of this matrix are, the less orthogonal the two correspondin vectors are.
+	We can see that in \autoref{fig:lanczos0_W} orthogonality is maintained in comparison to the previous vectors roughly for the last 20 vectors, and after the same number of iterations for some vector pairs orthogonality is completely and irreovcably lost.
+	
+	This can be further corrobarated by the convergence of the Ritz values as seen in \autoref{fig:lanczos0_W_ritz}.
+	Note that the test matrix (provided in \texttt{Test.mtx}) only has real eigenvalues more than or equal to one. We can see that in 
+	comparison with the better performing \texttt{Lanczos1} algorithm (to be discussed later) where the Ritz values seem to be doing a good job approximating the spectrum of eigenvalues (in \autoref{fig:lanczos1_W_ritz}). In contrast Lanczos0 has trouble fully covering the eigenvalues in the Test matrix. Even at higher iteration numbers (i.e. a larger number of Ritz values) sometimes a spurious Ritz value appears, for example between the two largest eigenvalues at $j=39$. This might be explained by the last vector having a too high component parallel to the eigenvector corresponding to a larger eigenvalue. Therefore this might change the eigenvalues of $T_k$, which results in a bad quality approximation of the spectrum.
 	
 	
 	
 	\subsection{Lanczos1: 'practical' Lanczos}
 	% It is not practical because calculating Q*Q is a lot of effort
+	In order to better preserve the orthogonality of all the vectors, periodic checks of the $W_j$ matrix would be desired coupled with full reorthogonalization. By the latter we mean that every component of other basis vectors is removed from the candidate $q_{j+1}$ as seen in \autoref{alg:reorthogonalization}, where the key step is
+	\begin{equation}
+		\textbf{r} \gets \textbf{r} - Q_{k-1} Q_{k-1}^\ast \textbf{r}.
+	\end{equation}
+	\begin{algorithm2e}[h!]
+	\SetAlgoNlRelativeSize{-1}
+	\caption{Reorthogonalization against all previous $\textbf{q}_i$}\label{alg:reorthogonalization}
+	\KwIn{$Q_k$: Matrix with quasi-orthonormal columns}
+	\KwIn{$\textbf{r}$: Vector to be reorthogonalized}
+	\KwOut{$\textbf{r}_{\text{new}}$: Reorthogonalized vector}
+	
+	$\textbf{r} \gets \textbf{r} - Q_{k-1} Q_{k-1}^\ast \textbf{r}$\\
+	$\alpha_{\text{loc}} \gets \textbf{q}_k^\ast \cdot r$\\
+	$\textbf{r}_{\text{new}} \gets \textbf{r} - \alpha_{\text{loc}}  \textbf{q}_k$\\
+\end{algorithm2e}
+	
+	To detect the lost of orthogonality we require that the offdiagonal elements of $W_j$ satisfy some condition, namely that they would not exceed some $\delta$ value so ast to
+	\begin{equation}
+		w_{j,\infty}:=\|W_j-I_j\|_{\mathrm{max}} < \delta
+	\end{equation}
+ If $\delta = \sqrt{\frac{\epsilon}{j}}$, then the semi-orthogonality of $Q_j$ will be preserved, meaning that $w_{j, \infty} = \mathcal{O}\left(\sqrt{\epsilon}\right)$. 	\autoref{theore:quasi-orth} ensures that this will suffice to contain the errors of the method.
+	
+	\begin{theorem}\label{theore:quasi-orth}
+		With notation from before, let $P_j$ denote the orthogonal basis for $\text{span}(Q_j)$.
+		If $w_{j,\infty}<\sqrt{\frac{\epsilon}{j}}$ then
+		$$\|P_j^{\ast}AP_j-T_j\|_{max}=\mathcal{O}(\epsilon\|A\|).$$ 
+	\end{theorem}
 	
 	\begin{algorithm2e}[ht]
-		\SetAlgoNlRelativeSize{-1}
-		\caption{Reorthogonalization against all previous $\textbf{q}_i$}\label{alg:reorthogonalization}
-		\KwIn{$Q_k$: Matrix with quasi-orthonormal columns}
-		\KwIn{$\textbf{r}$: Vector to be reorthogonalized}
-		\KwOut{$\textbf{r}_{\text{new}}$: Reorthogonalized vector}
 		
-		$\textbf{r} \gets \textbf{r} - Q_{k-1} Q_{k-1}^\ast \textbf{r}$\\
-		$\alpha_{\text{loc}} \gets \textbf{q}_k^\ast \cdot r$\\
-		$\textbf{r}_{\text{new}} \gets \textbf{r} - \alpha_{\text{loc}}  \textbf{q}_k$\\
+		\SetKwInOut{Input}{input}
+		\SetKwInOut{Output}{output}
+		\SetKw{Init}{init}{}{}
+		\SetAlgoLined
+		\Input{Linear, symmetric real operator $A$ on $\mathbb{R}$}
+		\Output{Approximately orthogonally similar tridiagonal $T\sim A$, given by diagonals $\mathbf{\alpha},\mathbf{\beta}$}
+		\Init{choose starting vector $\mathbf{r}_0$,$\beta_0:=\|\mathbf{r}_0\|$, $\mathbf{q}_0=0$, $W_0=\begin{bmatrix} 0 \end{bmatrix}$, \texttt{reorth\_next}=0, $\delta= \sqrt{\frac{\epsilon}{j}}$}\\
+		\For{$j=1,2,...$}{
+			$\mathbf{q}_j:=\mathbf{r}_{j-1}/\beta_{j-1}$\\
+			$\mathbf{v}_j=A\mathbf{q}_j-\beta_{j-1}\mathbf{q}_{j-1}$\\
+			$\alpha_j=\mathbf{v}_j^{\ast}\mathbf{q}_j$\\
+			$\mathbf{r}_j=\mathbf{v}_j-\alpha_j\mathbf{q}_j$\\
+			$\beta_j=\|\mathbf{r}_j\|$\\
+			\tcc{   Is reorthogonalization needed?}
+			\If{$j<k_{\text{max}}-1$ \textbf{and} $j>1$}{
+				$W_{j} \gets Q_j^\ast Q_j$\tcp{Calculating $W_j$ via expensive matrix product}\label{line:Wj-by-matmul}
+				$\omega_{j,\infty} \leftarrow  \lVert W_j-I_j \rVert_{\mathrm{max}}$\\
+				\If{$\omega_{j,\infty} > \delta$}{
+					\tcp{Reorthogonalization needed}
+					\texttt{reorth\_next} $\gets$ 2\tcp{Reorthogonalize the next two vectors}\label{line:reorth-next}
+					
+				}
+			}
+			\tcc{   Reorthognalize if needed}
+			\If{$\texttt{reorth\_next}>0$}{
+				$\mathbf{r}_j, \beta_j \gets \text{reorthogonalization}(Q_k(:, 1:j), \mathbf{r}_j, \beta_j)$ \tcp{Reorthogonalize using \autoref{alg:reorthogonalization}}
+				$W_j(1:end-1) \leftarrow \epsilon z_3$ \tcp{Reroll off-diagonal values}
+				\texttt{reorth\_next} $\gets$ \texttt{reorth\_next}-1
+			}
+		}
+		\caption{Lanczos1 with impractically detected full reorthogonalization}\label{alg:Lanczos1}
 	\end{algorithm2e}
 	
+	The implementation of Lanczos1 can be seen in \autoref{alg:Lanczos1}, and has also been implemented in \texttt{Matlab}. An important pratical aspect to note is that while it would be enough to just reorthogonalize one of the vectors at each trigger of the condition, in practice though this leads to a more inefficient algoithm. The reason behind this is that as we can see in \autoref{eq:LanczosStep} (the Lanczos step), any new vector relies on the previous two. Therefore even if we reorthogonalize one of them, the one before could still allow to carry over and spread the numerical errors. To circumvent this we can just reorthogonalize two iterations in a row, which cuts of the spread of the floating point errors to the new vectors. This is why on \autoref{line:reorth-next} \texttt{reorth\_next} is set to 2 (this and following is reorthogonalized). 
+	
+	The numerical results of the algorithm shows good orthogonality preservation in \autoref{fig:lanczos1_W} as well as good convergence of the Ritz values in \autoref{fig:lanczos1_W_ritz}. Here the convergence of the latter is much more stable, once a good estimate has been found somewhere that won't wiggle around. 
+	
+	However, despite our best efforst, Lanczos1 loses a lot of the time efficiency of Lanczos0. This slowness is mainly caused by \autoref{line:Wj-by-matmul}, where the matrix multiplication can be in general of order $\mathcal{O}(n^3)$, and is performed each iteration. \autoref{ssec:lanczos2} will try to remedy this problem, by introducing a celever heuristic for estimating $\omega_{j,\infty}$.
 	\begin{figure}
 		\centering
 		\resizebox{\textwidth}{!}{
@@ -195,7 +257,7 @@
 	
 	\FloatBarrier
 	
-	\subsection{Lanczos2: heuristic for loss of orthogonality}
+	\subsection{Lanczos2: heuristic for loss of orthogonality}\label{ssec:lanczos2}
 	
 	Calculating $W = Q^\ast Q$ was the most costly part of the Lanczos1 algorithm, especially since this step needs to be done at each iteration, to determine whether a correction is needed or not in the first place. Loss of orthogonality could be predicted using a parallel system for iteratively constructing $\tilde{W}$, which could serve as a proxy to gauge when loss of orthogonality is to be expected. Our main assumption going forward will be that floating point errors have comaprable behaviour to that of Gaussian noise.
 	
@@ -268,24 +330,31 @@
 	\SetAlgoLined
 	\Input{Linear, symmetric real operator $A$ on $\mathbb{R}$}
 	\Output{Approximately orthogonally similar tridiagonal $T\sim A$, given by diagonals $\mathbf{\alpha},\mathbf{\beta}$}
-	\Init{choose starting vector $\mathbf{r}_0$,$\beta_0:=\|\mathbf{r}_0\|$, $\mathbf{q}_0=0$, $W_0=\begin{bmatrix} 0 \end{bmatrix}$}\\
+	\Init{choose starting vector $\mathbf{r}_0$,$\beta_0:=\|\mathbf{r}_0\|$, $\mathbf{q}_0=0$, $W_0=\begin{bmatrix} 0 \end{bmatrix}$, \texttt{reorth\_next}=0, $\delta= \sqrt{\frac{\epsilon}{j}}$}\\
 	\For{$j=1,2,...$}{
 		$\mathbf{q}_j:=\mathbf{r}_{j-1}/\beta_{j-1}$\\
 		$\mathbf{v}_j=A\mathbf{q}_j-\beta_{j-1}\mathbf{q}_{j-1}$\\
 		$\alpha_j=\mathbf{v}_j^{\ast}\mathbf{q}_j$\\
 		$\mathbf{r}_j=\mathbf{v}_j-\alpha_j\mathbf{q}_j$\\
 		$\beta_j=\|\mathbf{r}_j\|$\\
+		\tcc{   Is reorthogonalization needed?}
 		\If{$j<k_{\text{max}}-1$ \textbf{and} $j>1$}{
 			$W_{j}, W_{j-1} \leftarrow \text{update\_w}(W_{j-1}, W_{j-2}, \alpha, \beta, n)$ \tcp{Updating $W$-prox with \autoref{alg:update_w}}
 			$\omega_{j,\infty} \leftarrow \max_{1\leq k \leq j-1}(\lvert W_j(k) \rvert)$\\
 			\If{$\omega_{j,\infty} > \delta$}{
 				\tcp{Reorthogonalization needed}
-				$\mathbf{r}_j, \beta_j \leftarrow \text{reorthogonalization}(Q_k(:, 1:j), \mathbf{r}_j, \beta_j)$ \tcp{Reorthogonalize}
-				$W_j(1:end-1) \leftarrow \epsilon z_3$ \tcp{Reroll off-diagonal values}
+				\texttt{reorth\_next} $\gets$ 2\tcp{Reorthogonalize the next two vectors}
+				
 			}
 		}
+		\tcc{   Reorthognalize if needed}
+		\If{$\texttt{reorth\_next}>0$}{
+			$\mathbf{r}_j, \beta_j \gets \text{reorthogonalization}(Q_k(:, 1:j), \mathbf{r}_j, \beta_j)$ \tcp{Reorthogonalize using \autoref{alg:reorthogonalization}}
+			$W_j(1:end-1) \leftarrow \epsilon z_3$ \tcp{Reroll off-diagonal values}
+			\texttt{reorth\_next} $\gets$ \texttt{reorth\_next}-1\\
+		}
 	}
-	\caption{Lanczos2 with practically detected reorthogonalization (only one reorth for simplicity, in practice this migth differ)}\label{alg:LanczosQuasiOrtho}
+	\caption{Lanczos2 with practically detected reorthogonalization}\label{alg:Lanczos2}
 \end{algorithm2e}
 
 \begin{algorithm2e}[ht]
@@ -682,7 +751,7 @@ To be more optimal at recycling information, one could develop a recursive algor
 	\Upsilon(a,b) = \left\lbrace a, a+1, a+2, \dots b-1, b\right\rbrace
 \end{equation*}
 
-\begin{algorithm2e}[ht]
+\begin{algorithm2e}[h!]
 	
 	\SetKwInOut{Input}{input}
 	\SetKwInOut{Output}{output}
@@ -767,7 +836,7 @@ $$\delta \mathbf{u}=\begin{pmatrix}
 	\delta \mathbf{u}_y\\
 	\delta \mathbf{u}_z
 \end{pmatrix}\footnotemark$$
-\footnote{One can see from the roughly similar $3\times 3$ blocks in the matrices that result from such an ordering of the displacement vector.}
+\footnotetext{One can see from the roughly similar $3\times 3$ blocks in the matrices that result from such an ordering of the displacement vector.}
 a vector of displacements. Such a problem is called a generalized eigenvalue problem. The matrix $K$
 is called the stiffness matrix, and the matrix $M$ is called the mass matrix. Note that each node of the
 given grid produces three degrees of freedom (dof). Elements in the stiffness matrix correspond to the
@@ -835,7 +904,7 @@ The calculated first 5 eigenfrequencies of the system are compared in \autoref{t
 	
 \subsection{Visualization of the modes}
 
-To calculate the eigenvectors, we can rely on the built in \texttt{null} function of \texttt{Matlab}, which calculates a basis of the nullspace $\mathcal{N}(A)$ of a given matrix. Using basic linear algebra and leveraging the unitary property of $U$, we know that for a calculated eigenvalue $\omega_i^2$ we can get the eigenvector by  
+To calculate the eigenvectors, we can rely on the built in \texttt{null} function of \texttt{Matlab}, which calculates a basis of the nullspace $\mathcal{N}(A)$ of a given matrix. However in order to make this work the Lanczos algorithm must be run for the entire matrix, lest we will not be able to get a null-vector. In desperate cases other techniques (such as fixing a value in $\delta\textbf{u}$, and calculating the rest of the values according to the resulting inhomogeneus linear equation). Using basic linear algebra and leveraging the unitary property of $U$, we know that for a calculated eigenvalue $\omega_i^2$ we can get the eigenvector by  
 \begin{equation}
 	w_i \in \mathcal{N}(A-\omega_i^2 I), \quad \delta \textbf{u}_i = U S^{-\frac{1}{2}} w_i  \leftrightarrow K \delta \textbf{u}_i = \omega_i^2 M \delta \textbf{u}_i. 
 \end{equation}
