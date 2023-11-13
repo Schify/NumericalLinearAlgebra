@@ -67,9 +67,9 @@ for j=1:kmax
           else
               indicies = reshape(union(indicies, new_indicies), 1,[]);
           end
-          display(indicies)
-          figure
-          plot_Qq(Q_k(:,1:j),j,norm(r),r,eta,delta, abs(w), new_indicies)
+%           display(indicies)
+%           figure
+%           plot_Qq(Q_k(:,1:j),j,norm(r),r,eta,delta, abs(w), new_indicies)
           full_reorth = reorth_prev;
       end
   end
