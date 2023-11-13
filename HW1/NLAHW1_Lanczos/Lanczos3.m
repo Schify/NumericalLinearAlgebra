@@ -1,4 +1,4 @@
-function [Q_k,T_k,r,err_ind,w_k_inf_quasi] = Lanczos2(A,kmax,r,nrm_A)
+function [Q_k,T_k,r,err_ind,w_k_inf_quasi] = Lanczos3(A,kmax,r,nrm_A)
  
 if kmax == -1
     kmax=size(A,1);
@@ -6,7 +6,7 @@ end
 
 % INIT
 n=size(A,1);
-eta = ((eps)^(3/4))/sqrt(kmax);   % intermed. orth level
+eta = 0*((eps)^(3/4))/sqrt(kmax);   % intermed. orth level
 delta = sqrt(eps/kmax);         % threshold \delta for semi-orthogonality
 reorth_prev = 1;                % RECOMMENDED: reorth. against prev 2 vectors
                                 % you can turn this off, but results can be
@@ -25,7 +25,6 @@ w_k_inf_quasi = zeros(kmax,1);
 full_reorth = 0;
 w_old = [];
 w = [1];
-% reorth_ind = [];
 for j=1:kmax
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -61,7 +60,7 @@ for j=1:kmax
       w_k_inf_quasi(j+1)=max(abs(w(1:(end-1))));
       if w_k_inf_quasi(j+1)>delta
           fprintf("Reorthogonlaizing needed: %i\n", j)
-%           reorth_ind = [reorth_ind; j];
+          
 
           full_reorth = 2;
       end
@@ -76,7 +75,7 @@ for j=1:kmax
   % Lanczos1.m & Lanczos2.m     : full reorth (see int full_reorth)
   if full_reorth>0 && j>2
     %reorthogonlaize q_j
-    [new_r, new_beta] = reorth(Q_k(:, 1:j), r, norm(r));
+    [new_r, new_beta] = reorth(Q_k(:, 1:j), r, norm(r), delta, eta);
     r = new_r;
     beta(j+1) = new_beta;
     
@@ -126,10 +125,32 @@ function [w,w_old] = update_w(w,w_old,alpha,beta, n)
     w     = w_new(2:end);
 end
 
-function [rnew, nrmnew] = reorth(Q_k, r, nrm)
-    r = r - Q_k(:,1:(end-1))*(Q_k(:,1:(end-1))'*r);
+function [rnew, nrmnew] = reorth(Q_k, r,norm_r, delta, eta)
+    indicies = find_L(Q_k(:,1:(end-1))'*r/norm_r, delta, eta);
+    r = r - Q_k(:,indicies)*(Q_k(:,indicies)'*r);
     alpha_loc = Q_k(:,end)'*r;
     rnew = r - alpha_loc*Q_k(:,end);
     nrmnew = norm(rnew);
+end
+
+function indicies = find_L(x, delta, eta)
+    if eta >= delta
+        error('eta should be less than delta');
+    end
+
+    above_eta   = x > eta;
+    %finding contiguous intervals where eta<x
+    interval_start = find(and(not([false; above_eta(1:end-1)]),...
+                                above_eta)); %where could an interval start (before no, now yes)
+    interval_end = find(and(above_eta,...
+                         not([above_eta(2:end);false]))); %where could an interval end (now yes, next no)
+    interval_needed = false(size(interval_start));
+    for ind = find(x>delta)'
+        interval_needed = or(interval_needed, and(ind>=interval_start, ind<=interval_end));
+    end
+    indicies = [];
+    for int_ind = find(interval_needed)'
+        indicies = [indicies, (interval_start(int_ind):interval_end(int_ind))];
+    end
 end
 
