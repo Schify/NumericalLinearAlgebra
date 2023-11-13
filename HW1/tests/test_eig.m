@@ -11,7 +11,7 @@ kmax = 200;
 [Q_k,T_k,r,err_ind,w_k_inf]=Lanczos2(A, kmax, rand(size(A,1), 1), max(max(A)));
 
 
-x0 = 1000; y0 = 300; width = 800; height = 250;
+x0 = 1000; y0 = 300; width = 700; height = 250;
 figure
 W_k = Q_k'*Q_k;
 plot_W(W_k-eye(size(W_k)), w_k_inf, x0, y0, width, height)

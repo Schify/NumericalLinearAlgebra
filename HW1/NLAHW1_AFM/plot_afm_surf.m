@@ -24,7 +24,7 @@ for e=1:size(surf,1)
    
    f=l(surf(e,ord));
    
-   fill3(x,y,z,f)
+   fill3(x,y,z,f, "FaceAlpha",0.5)
 end
 
 shading interp

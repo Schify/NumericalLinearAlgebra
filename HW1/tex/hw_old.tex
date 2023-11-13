@@ -30,7 +30,7 @@
 \usepackage{xstring}
 \usepackage[]{pgfkeys}
 \usepackage{xfrac}
-\usepackage[newfloat]{minted}
+\usepackage{minted}
 \usetikzlibrary{external}
 \usetikzlibrary{calc,math}
 \tikzexternalize[prefix=extern/]
@@ -41,8 +41,6 @@
 \usepackage[ruled,vlined,linesnumbered,algo2e]{algorithm2e}
 \usepackage{wrapfig}
 \usepackage{subcaption}
-\newenvironment{code}{\captionsetup{type=listing}}{}
-\SetupFloatingEnvironment{listing}{name=Source Code}
 \graphicspath{../plots/}
 
 \usepackage{wasysym}
@@ -446,7 +444,7 @@ Now we'll go on to prove Paige's lemma.
 
 Using \autoref{lemma:paige} we can see that those Ritz pairs who are closely approximating, meaning they have low error in $\beta_{ji} := \|A\textbf{y}_i - \theta_i \textbf{y}_i\|_2$, will correspond to a high $\left|\textbf{y}_i^{\ast}\textbf{q}_{j+1}\right|$. On the other side for those pairs which are far from converginfg this will be high. This means that $\textbf{q}_{k+1}$ only has high components in the well converged Ritz vectors' directions. This means that the subspace's orthogonality is lost in these directions for the next $q_{k+1}$, as $y_i = Q_k s_i \rightarrow y_i \in \mathrm{col}\left(Q_k\right)$.
 
-\section{Eigenvalues of a tridiagonal matrix}\label{sec:eig-tri}
+\section{Eigenvalues of a tridiagonal matrix}
 The ideas presented here are, as presumably the assignment is as well, losely based on the fundamental paper of \textcite{givens-eig} and later work of \textcite{sturm-ortega1960}.
 \subsection{Characteristic polynomial}
 Suppose that a tridiagonal symmetric (real) matrix $T$ is given:
@@ -633,48 +631,6 @@ For us to find a more useful algorithm we first have to remind ourselves of the 
  
 Note that if a $\beta_l$ is zero, that will break up the matrix into two blocks. This leads to the natural conclusion that in case of zero betas we can just recursively apply the algorithm. In a slightly more sophisticated fashion we could generalize the algorithm \autoref{alg:eigfind-Tj} so that it searches the blocks separately until out of $b$ blocks you find the one the $k^{\mathrm{th}}$ eigenvalue of the whole matrix, i.e. the $b$ blocks collectively have $k-1$ less eigenvalues smaller.
 
-\subsection{Stability of the eigenvalue algorithm}
-
-If we apply the above algorithm for finding eigenvalue we will soon notice a limitation of the algorithm for larger matrices: it simply fails to work for sizes from $\sim 800$ and up. The reason has to do with the evaluation of the sequence of polynomials which results in a faulty $s(x)$. This root cause, as noted by \textcite{stable_polys_Barth_Martin_Wilkinson_1967} is that during the evaluation of the polynomial sequence floating point number overflow happens. To prevent this a more stable sequence is suggested by \autocite{stable_polys_Barth_Martin_Wilkinson_1967}, namely one that keeps track of the ratio of the polynomials so that 
-\begin{equation}
-	q_{i} = \frac{p_i(x)}{p_{i-1}(x)} \quad \mathrm{for}\, i = 1, 2, \dots n.
-\end{equation}
-Thereby the recursion transforms into 
-\begin{align}
-	q_{0}(x) &= \alpha_1 - x,\\
-	q_{i}(x) &= \alpha_i - x - \frac{\beta_{i}^2}{q_{i-1}(x)}.
-\end{align}
-
-This seems to aleviate the problems one might face in the next section.
-
-Here as a test case two randomly generated tridiagonal symmetric matrices are used to test the algorithm in \autoref{fig:eig-stability}, which suggests that the stabilized version works well.
-\begin{figure}[h!]
-	\centering
-	\begin{subfigure}{0.35\textheight}
-		\centering
-		\includegraphics[width=\textwidth]{../plots/eig_rand_test_k25_s0.pdf}
-		\subcaption{Random tridiagonal matrix with $n=25$, \textbf{unstable} eigenvalue algorithm}
-	\end{subfigure}
-	\begin{subfigure}{0.35\textheight}
-	\centering
-	\includegraphics[width=\textwidth]{../plots/eig_rand_test_k800_s0.pdf}
-	\subcaption{Random tridiagonal matrix with $n=800$, \textbf{unstable} eigenvalue algorithm}
-	\end{subfigure}
-	
-	\begin{subfigure}{0.35\textheight}
-	\centering
-	\includegraphics[width=\textwidth]{../plots/eig_rand_test_k25_s1.pdf}
-	\subcaption{Random tridiagonal matrix with $n=25$, \textbf{stable} eigenvalue algorithm}
-	\end{subfigure}
-	\begin{subfigure}{0.35\textheight}
-	\centering
-	\includegraphics[width=\textwidth]{../plots/eig_rand_test_k800_s1.pdf}
-	\subcaption{Random tridiagonal matrix with $n=800$, \textbf{stable} eigenvalue algorithm}
-	\end{subfigure}
-	
-	\caption{Testing the \textbf{stable} and \textbf{unstable} eigenvalue finding algorithms for two random suitable matrices. Apart from the eigenvalues $s(x)$ is also compared to the matlab \texttt{eig} function's results.}\label{fig:eig-stability}
-\end{figure}
-
 \subsubsection*{Finding mutliple eigenvalues at the same time}
 
 To be more optimal at recycling information, one could develop a recursive algorithm for calculating a set of desired eigenvalues, where each evaluation of $s(x)$ is used to its maximal potential. \autoref{alg:eigfind-Tj-recursive} descirbes such an algorithm. Here let us denote the set of whole numbers between $a$ and $b$ ($a<b$) with 
@@ -708,7 +664,7 @@ To be more optimal at recycling information, one could develop a recursive algor
 		\uElseIf{$\frac{b-a}{b} > \kappa$ \textbf{or} $|K| > 1$}{
 			$c = \frac{a+b}{2}$\\
 			\tcc{Using \autoref{alg:char-poly-eval} to evaluate $s(c)$ in $\mathcal{O}(j)$. Values are cached in reality}
-			\Return{\texttt{SetBisect}$\left(K \cap \Upsilon\left(s(a),s(c)\right),a,c,\textsc{} \alpha, \beta\right)\,$ $\cup\footnotemark\,$ \texttt{SetBisect}$\left(K \cap \Upsilon\left(s(c),s(b)\right),c, b, \alpha, \beta\right)$\tcp{Recursion}}
+			\Return{\texttt{SetBisect}$\left(K \cap \Upsilon\left(s(a),s(c)\right),a,c, \alpha, \beta\right)\,$ $\cup\footnotemark\,$ \texttt{SetBisect}$\left(K \cap \Upsilon\left(s(c),s(b)\right),c, b, \alpha, \beta\right)$\tcp{Recursion}}
 		}
 		\Else{\Return{$\left[\frac{a+b}{2}\right]$}\tcp{Eigenvalue resolved with $\frac{\kappa}{2}$ precision in this interval}}
 	}
@@ -716,163 +672,6 @@ To be more optimal at recycling information, one could develop a recursive algor
 	\caption{Finding a set $K$ eigenvalues of the tridiagonal matrix $T_j$ with $\kappa/2$ precision}\label{alg:eigfind-Tj-recursive}
 \end{algorithm2e}
 \footnotetext{Interpret $\cup$ as concatenation for arrays}
-
-\FloatBarrier
-\section{Atomic Force Microscopy}
-\subsection{Background}
-\begin{figure}[ht]
-	\includegraphics[width=.5\linewidth,height=4.5cm]{../afm_tip.jpg}
-	\includegraphics[width=.5\linewidth,height=4.5cm]{../afm_principle.png}
-\end{figure}
-Atomic force microscopy (AFM) is a microscopy technique that works on the same length scales a
-scanning tunneling microscopy (STM), but does not need its subject to be electrically conductive.
-The driving transmitted of information is not tunneling electons, but various atomic forces. This
-makes AFM better suited to study proteins, blood cells, etc. than STM.\\
-
-
-The basic priciple is that a cantilever with a small tip at its free end is brought close to, or in contact
-with a material or material surface. A concentrated light beam is bounced off of the cantilever and
-captured on a light sensitive receiver. Then the movement of the cantilever due to atomic forces can
-be recorded and information on the sample can be deduced.
-AFM comes in three modes: contact mode, tapping mode and non-contact mode.For this homework,
-we are only interested in the non-contact mode.\\
-
-
-In non-contact atomic force microscopy the cantilever tip does not come in contact with the sample
-surface, but rather sits at some distance, where chosen non-contact forces are strongest. For instance
-the van der Waals forces are strongest from 1 nm to 10 nm above the surface. The cantilever is oscillated
-at one of its resonant frequencies (frequency modulation) or just above one (amplitude modulation).
-The long-range forces above the surface decrease the resonance frequency of the cantilever. By moving
-the tip closer and further this decrease can be counteracted. As such, a constant oscillation (in
-amplitude or frequency) is created, which can be used to measure the distance to the sample. Since
-this mode of AFM operation does not actually contact the sample, it is much more suited for the
-observation of delicate systems.\\
-
-
-Additionally, the cantilever oscillation frequencies and modes can provide insight into the types of
-forces acting on the AFM system and even on the indiviual atoms that the sample is made up of.
-It should be clear to you from these considerations that a rigorous modal analysis of the AFM cantilever
-is absolutely vital. This is what we will do in this final part of the assignment.
-\subsection{Modal analysis using the finite element method}
-In a modal analysis the typical assumption is that of undamped harmonic motion without driving
-forces. Whenever the given volume is discretized to a mesh and a choice of basis functions is made
-(taking boundary conditions into account) this leads to a system
-
-\begin{equation}\label{eq:gen-eig}
-	(K - \omega^2 M)\delta \mathbf{u} = 0
-\end{equation}
-with
-$$\delta \mathbf{u}=\begin{pmatrix}
-	\delta \mathbf{u}_x\\
-	\delta \mathbf{u}_y\\
-	\delta \mathbf{u}_z
-\end{pmatrix}\footnotemark$$
-\footnote{One can see from the roughly similar $3\times 3$ blocks in the matrices that result from such an ordering of the displacement vector.}
-a vector of displacements. Such a problem is called a generalized eigenvalue problem. The matrix $K$
-is called the stiffness matrix, and the matrix $M$ is called the mass matrix. Note that each node of the
-given grid produces three degrees of freedom (dof). Elements in the stiffness matrix correspond to the
-stiffness at dof-dof interactions (e.g. the xy-stiffness at a given node), and the elements of the mass
-matrix correspond to the masses at the corresponding dof-dof interactions. 
-It stands to reason therefore that $M$ and $K$ will be symmetric real (and in most cases positive definite).
-
-Before the solving the system, boundary conditions have to be applied. In this particular case only homogeneous Dirichlet boundary conditions have to be applied, which mean that the components of $\delta \textbf{u}$ corresponding to certain nodes in the mesh have to be set to zero: these are the fixed ends of the cantilever. Since we are talking about the components being set to zero, this wont affect the right hand side of \autoref{eq:gen-eig}, so we will assume moving forward that the rows and columns corresponding to these elements have been removed already.
-
-\subsection{Transformation into regular eigenvalue problem}
-Since the matrices $M, K$ are symmetric, we can employ the singular value decomposition to transform the problem into the standard eigenvalue problem. Let's assume that we perform the singular value decompositon on $M$ as follows
-\begin{equation}
-	M = U S V^\ast = U S U^\ast
-\end{equation}
-where in our particular case since all of the singular values are non-zero, $S$ will be a full diagonal matrix, while $U=V$ orthonormal/unitary.
-Since the singular values are all non-negative by definition we can construct the cholesky factorization as 
-\begin{equation}
-	M = U S ^{\frac{1}{2}} \left(U S ^{\frac{1}{2}}\right)^ast,
-\end{equation}
-where $S ^{\frac{1}{2}}$ is simply the elementwise square root of the diagonal matrix. Armed with this we can reformulate the problem in \autoref{eq:gen-eig} as 
-\begin{equation}\label{eq:stand-eig}
-	U S^{\frac{1}{2}} \bigl( \underbrace{S^{-\frac{1}{2}} U^\ast K U S^{-\frac{1}{2}}}_{A} - \omega^2 I\bigr)S^{\frac{1}{2}} U^\ast \delta \mathbf{u} = 0 
-\end{equation}
-Therefore we see that \autoref{eq:stand-eig} is already a standard eigenvalue problem for a symmetric matrix.
-
-\subsection{Numerical approximation of the eigenvalues}
-Now we can use the Lanczos method (in this case \texttt{Lanczos2} or \texttt{Lanczos3}) to transform $A$ into tridiagonal form, where the eigenvalues can be estimated using the methods described in \autoref{sec:eig-tri}, e.g. \autoref{alg:eigfind-Tj} with the stabilized characteristic polynomial evaluation. Such an algorithm is demonstrated using in \autoref{code:solve-afm}, where we check whether this method preserves and correctly estimates the eigenvalues of the matrix. 
-
-We can see in \autoref{fig:afm-eig} that the eigenvalues of \autoref{eq:gen-eig} and \autoref{eq:stand-eig} perfectly cover eachother, therefore our manipulation of the system with the SVD has not distorted the results. Gurthermore we can see thet with only 300 ($k_{\mathrm{max}}= 300$) Ritz values the Lanczos algorithm is doing a pretty good job of approximating the spectrum. The stabilized \autoref{alg:eigfind-Tj} (with $k=1,2,3,4,5,\dots$ as the lowest values' indicies) perfectly finds the lowest eigenvalues of the system as one can see.
-\begin{figure}[h!]
-	\centering
-	\resizebox{0.8\textwidth}{!}{
-		\input{../plots/afm_eigs.tex}}
-	\caption{The various eigenvalues $\left(\omega_i^2\right)$ of the generalized eigenvalue problem in \autoref{eq:gen-eig} (${\color{blue}-}$), and of $A$ (${\color{red}-}$) from \autoref{eq:stand-eig} obtained using \texttt{Matlab}'s built in \texttt{eig} function. The eigenvalues/Ritz values of $T_k$ (${\color{yellow}\times}$) from \texttt{eig} and our custom \texttt{eigval\_k} (${\color{purple}\times}$) from \autoref{alg:eigfind-Tj} (with which only the first few are calculated) are marked with $\times$'s. Their $x$ coordinates are distorted so as to distribute them over the same length as the explicitly calculates values }\label{fig:afm-eig}
-\end{figure}
-
-The calculated first 5 eigenfrequencies of the system are compared in \autoref{table:eig-calc-300}. We can see that while the respective techniques do give similar results before and after the Lanczos decomposition, however it is impossible to require of the Ritz values to converge faster to the lowest eigenvalues, as they are trying to cover the entire spectrum most optimally, and these values are outliers. A higher number of iteration steps ($k_{\mathrm{max}}$) would of course lead to better estimations but increase computational costs.
-
-\begin{table}[h!]
-	\centering
-	\caption{Eigenvalues calculated with various methods (For the Lanczos various sizes are used}\label{table:eig-calc-300}
-	\begin{tabular}{r|c|c|c|c|c|c}
-		method & $k_{\mathrm{max}}$ & $\omega_1$& $\omega_2$& $\omega_3$& $\omega_4$& $\omega_5$ \\\hline\hline
-		\texttt{eig(K,M)} &-&  1.0020864e+02 & 5.2977376e+02 & 6.7732332e+02 & 1.1282088e+03 & 1.6398795e+03\\\hline
-		\texttt{eig(A)} &-& 1.0020864e+02 & 5.2977376e+02 & 6.7732332e+02 & 1.1282088e+03 & 1.6398795e+03\\\hline\hline
-		\texttt{eig(T\_k)} &300& 2.6346086e+03 & 8.8949675e+03 & 1.4536307e+04 & 2.0342715e+04 & 2.6965513e+04 \\\hline
-		\texttt{eigval\_k(A)} &300& 2.6346086e+03 & 8.8949675e+03 & 1.4536307e+04 & 2.0342715e+04 & 2.6965513e+04\\\hline\hline
-		\texttt{eigval\_k(A)} &900& 7.4794369e+02 & 2.5283561e+03 & 3.5036295e+03 & 5.9547354e+03 & 7.5757296e+03\\\hline\hline
-		\texttt{eigval\_k(A)} &1500& 5.3315103e+02 & 1.6230993e+03 & 2.5812411e+03 & 3.0990669e+03 & 4.3763682e+03\\\hline\hline
-		\texttt{eigval\_k(A)} &1500& 1.0020864e+02 & 5.2977376e+02 & 6.7732332e+02 & 1.1282088e+03 & 1.6398795e+03\\\hline\hline
-	\end{tabular}
-	 
-	 
-	
-	
-\end{table}
- 
-\FloatBarrier
-
-\begin{code}
-	\inputminted[mathescape,linenos,frame=lines]{matlab}{../tests/solve_afm.m}
-	\captionof{listing}{\texttt{solve\_afm.m}}
-	\label{code:solve-afm}
-\end{code}
-	
-\subsection{Visualization of the modes}
-
-To calculate the eigenvectors, we can rely on the built in \texttt{null} function of \texttt{Matlab}, which calculates a basis of the nullspace $\mathcal{N}(A)$ of a given matrix. Using basic linear algebra and leveraging the unitary property of $U$, we know that for a calculated eigenvalue $\omega_i^2$ we can get the eigenvector by  
-\begin{equation}
-	w_i \in \mathcal{N}(A-\omega_i^2 I), \quad \delta \textbf{u}_i = U S^{-\frac{1}{2}} w_i  \leftrightarrow K \delta \textbf{u}_i = \omega_i^2 M \delta \textbf{u}_i. 
-\end{equation}
-This gives us a convenient way of calculating the eigenvectors.
-
-The calculated displacement modes are visualized in \autoref{fig:eig-modes} together with the mesh itself. It is important to note that the most energy is usually stored in the lowest eigenfrequency of such a system, so mode 1 is the most relevant. 
-We can observe that the higher frequencies correspond to more and more complicated vibration shapes. Mode 1 is the most straighforward simple bobbing of the tip, which is most important and imaginable for us.
-
-\begin{figure}[h!]
-	\centering
-	\begin{subfigure}{0.35\textheight}
-		\centering
-		\includegraphics[width=0.8\textwidth]{../plots/afm_mesh.pdf}
-	\end{subfigure}
-	\begin{subfigure}{0.35\textheight}
-		\centering
-		\includegraphics[width=0.9\textwidth]{../plots/afm_mesh_mode1.pdf}
-	\end{subfigure}
-	
-	\begin{subfigure}{0.35\textheight}
-		\centering
-		\includegraphics[width=0.9\textwidth]{../plots/afm_mesh_mode2.pdf}
-	\end{subfigure}\begin{subfigure}{0.35\textheight}
-	\centering
-	\includegraphics[width=0.9\textwidth]{../plots/afm_mesh_mode3.pdf}
-	\end{subfigure}
-	
-	\begin{subfigure}{0.35\textheight}
-		\centering
-		\includegraphics[width=\textwidth]{../plots/afm_mesh_mode4.pdf}
-	\end{subfigure}\begin{subfigure}{0.35\textheight}
-	\centering
-	\includegraphics[width=0.9\textwidth]{../plots/afm_mesh_mode5.pdf}
-	\end{subfigure}
-	
-	\caption{The mesh and the dominant (smallest $\omega$) eigenmodes of the cantilever model.}\label{fig:eig-modes}
-\end{figure}
 
 \FloatBarrier
 \newpage
