@@ -517,13 +517,29 @@
 		\begin{equation}
 				Q_k^{\ast}A^{T} A Q_k \textbf{z} = \lambda \textbf{z}
 		\end{equation}
-		and thereby $\lambda$ is an zero of the Ritz polynomial and also of $R_k$. Since this is true for any eigenvalue\footnote{For simplicity we assumed unique eigenvalues},\pdfmargincomment[author=Andras]{Multiplicities be damned. Probably it follows from something trivial though}
+		and thereby $\lambda$ is an zero of the Ritz polynomial and also of $R_k$. Since this is true for any eigenvalue\footnote{For simplicity we assumed unique eigenvalues.},\pdfmargincomment[author=Andras]{Multiplicities be damned. Probably it follows from something trivial though}
 		 and we know that the constant coefficient of $R_k$ must be $1$ due to \autoref{lemma:poly-ei}, after normalizing the Ritz polynomial based on the Viete formulas (or just basic algebra), we arrive at the final form of $R_k$ as 
 		\begin{equation}
 			R_k(t)=\prod_{j=1}^{k}\frac{\theta_j^{(k)}-t}{\theta_j^{(k)}},
 		\end{equation}
 		thus proving the theorem.
 	\end{proof}
+	
+	If we now take the SVD of $A= U S V^T$, with $\sigma_i$ singular values. Then since $A^T A  = V S^2 V^T$ thanks to $U$ having orthonormal columns. Since $V$ also has orthonormal columns, we can further modify the expression given for $R_k$ in \autoref{thm:CGPoly} as
+	\begin{equation}
+		\textbf{x}_* - \textbf{x}_k = R_k (A^T A ) (\textbf{x}_* - \textbf{x}_0) = R_k (V S^2 V^T) (\textbf{x}_* - \textbf{x}_0) =
+		V R_k ( S^2) V^T (\textbf{x}_* - \textbf{x}_0).
+	\end{equation}
+	Expressing $\textbf{x}_k$
+	\begin{equation}
+		\textbf{x}_k = \textbf{x}_* + V R_k ( S^2) V^T (\textbf{x}_0 - \textbf{x}_*) %= \textbf{x}_* + \sum_{i=1}^{k} R_k (\sigma_i^2)\textbf{v}_i^T \left(\textbf{x}_0 - \textbf{x}_*\right) \textbf{v}_i.
+	\end{equation}
+	By assuming $\textbf{x}_0 = 0$ and using the well known property of the SVD (that the solution to the normal equation can be expressed as $x_* = VS^{-1}U^Tb$)
+	\begin{dmath}
+		\textbf{x}_k = VS^{-1}U^T\textbf{b} - V R_k ( S^2) V^T V S^{-1}U^T \textbf{b} = V \left( S^{-1} - S^{-1} R_k ( S^2)\right)U^T \textbf{b} = V  \left( I -  R_k ( S^2)\right) S^{-1} U^T \textbf{b} = \sum_{i=1}^{k} \underbrace{\left(1-R_k (\sigma_i^2)\right)}_{f_i} \frac{\textbf{u}_i^T \textbf{b}}{\sigma_i} \textbf{v}_i
+	\end{dmath}
+	where the filter coefficient is indeed $f_i = 1-R_k (\sigma_i^2)$.
+	
 	\newpage
 	
 
