@@ -98,6 +98,7 @@
 
 
 \newtheorem{lemma}{Lemma}
+\newcommand{\lemmaautorefname}{Lemma}
 \newtheorem{theorem}{Theorem}
 \DeclareMathOperator*{\argmin}{arg\,min} % thin space, limits underneath in displays
 \DeclareMathOperator*{\argmax}{arg\,max} % thin space, limits underneath in displays
@@ -367,7 +368,7 @@
 			$\mbf{x}_{i}=\mbf{x}_{i-1}+a_i\mbf{d}_{i-1}$\label{line:cgls:x-update}\\
 			$\mbf{r}_{i}=\mbf{r}_{i-1}-a_iA\mbf{d}_{i-1}$\label{line:cgls:r-update}\\
 			$\beta_i=\|A^T\mbf{r}_i\|_2^2/\|A^T\mbf{r}_{i-1}\|_2^2$\\
-			$\mbf{d}_i=A^T\mbf{r}_{i}+\beta_i\mbf{d}_{i-1}$
+			$\mbf{d}_i=A^T\mbf{r}_{i}+\beta_i\mbf{d}_{i-1}$\label{line:cgls:d-update}
 		}
 		\caption{Conjugate Gradient Algorithm for the normal equations (CGLS)}
 		\label{alg:CGLS}
@@ -380,6 +381,7 @@
 		\item $\mathcal{K}_i(A^TA,\mathbf{r}_0^{LS})=\text{span}\{\mathbf{r}_0^{LS},A^TA\mathbf{r}_0^{LS},\ldots,(A^TA)^{i-1}\mathbf{r}_0^{LS}\}$ is the Krylov subspace associated to the CGLS iteration  $i$.
 		\item $\mbf{e}_i:=\mbf{x}_{\ast}-\mathbf{x}_i$
 		\item $\langle\mbf{v},\mbf{w}\rangle_{A}:=\langle A\mbf{v},A\mbf{w}\rangle$, and the norm $\|\mbf{v}\|_A$ and orthogonality $ \mbf{v}\perp_{A}\mbf{w}$ are defined correspondingly.
+		\item By default $\left\| \cdot \right\| = \left\| \cdot \right\|_2$ denotes the $2$-norm.
 	\end{itemize}
 %	\textbf{If you find it simpler, you can restrict your derivations to this case. Analyze the algorithm (briefly). In particular, show that $\mathbf{r}_i=\mathbf{b}-A\mathbf{x}_i$. You might need this later...}
 	In general the Conjugate Gradient Algorithm is analysed from the prespective of gradient steps. First let us look at some properties of the algorithm to better understand how in converges to a solution of the normal equation. 
@@ -416,12 +418,112 @@
 		\left\langle\textbf{r}_i^{LS} , \textbf{k}\right\rangle=0 \quad\forall\textbf{k}\in\mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right) \Longleftrightarrow
 		\textbf{r}_i^{LS} \perp \mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right)
 	\end{equation}
-	\begin{lemma}
+	
+	This is the condition that the algorithm seems to satisfy in each step, with $\textbf{r}_i^{LS}$ being orthogonal compared to $\textbf{d}_{i-1}$. For $i=1$ we can easily see this from the definition of $\textbf{d}_0 = A^T \textbf{r}_0 = \textbf{r}_0^{LS}$ and $\textbf{r}_1^{LS}$ with \autoref{line:cgls:r-update} mutiplied with $A^T$:
+	\begin{equation}
+		\textbf{r}_1^{LS} = \textbf{r}_0^{LS} - \frac{\left\| \textbf{r}_0^{LS} \right\|^2}{\left\| \textbf{d}_0 \right\|^2_A} A^T A \textbf{d}_0
+	\end{equation}
+	which means that
+	\begin{equation}
+		\left\langle \textbf{r}_0^{LS}, \textbf{r}_1^{LS}\right\rangle =  \left\langle \textbf{d}_0, \textbf{r}_1^{LS}\right\rangle = \left\langle \textbf{r}_0^{LS},\textbf{r}_0^{LS}\right\rangle - \frac{\left\| \textbf{r}_0^{LS} \right\|^2}{\left\| \textbf{d}_0 \right\|^2_A} \textbf{d}_0^T A^T A \textbf{d}_0 = 0.
+	\end{equation}
+	
+	We can see this relation throughout the iterations by looking at $\left\langle \textbf{d}_{i-1}, \textbf{r}_i^{LS}\right\rangle$ with the help of \autoref{line:cgls:r-update} again
+	\begin{equation}
+		\left\langle \textbf{d}_{i-1}, \textbf{r}_i^{LS}\right\rangle = \textbf{d}_{i-1}^T A^T  \textbf{r}_i 
+		= \textbf{d}_{i-1}^T  \textbf{r}_{i-1}^{LS} - a_i\underbrace{\textbf{d}_{i-1}^T A^T A \textbf{d}_{i-1}}_{\left\| \textbf{d}_{i-1} \right\|^2_A} 
+		=\textbf{d}_{i-1}^T  \textbf{r}_{i-1}^{LS}  - \left\| \textbf{r}_{i-1}^{LS}\right\|^2
+	\end{equation}
+	From \autoref{line:cgls:d-update} (with $i-1\to i$) we can express $\textbf{d}_{i-1}^T  \textbf{r}_{i-1}^{LS}$ as
+	\begin{equation}
+		\left\langle \textbf{d}_{i-1},  \textbf{r}_{i-1}^{LS}\right\rangle = \underbrace{\left\langle \textbf{r}_{i-1}^{LS},  \textbf{r}_{i-1}^{LS}\right\rangle}_{\left\| \textbf{r}_{i-1}^{LS}\right\|^2} + \beta_{i-1}\left\langle \textbf{d}_{i-2}, \textbf{r}_{i-1}^{LS}\right\rangle.
+	\end{equation}
+	Combining these last two steps, after $\left\| \textbf{r}_{i-1}^{LS}\right\|^2$ drops out, we arrive at a sort of product sequence formula
+	\begin{equation}
+		\left\langle \textbf{d}_{i-1}, \textbf{r}_i^{LS}\right\rangle = \beta_{i-1}\left\langle \textbf{d}_{i-2}, \textbf{r}_{i-1}^{LS}\right\rangle = \beta_{i-1}\beta_{i-2}\left\langle \textbf{d}_{i-3}, \textbf{r}_{i-2}^{LS}\right\rangle = \dots \left(\prod_{j=1}^{i-1}\beta_j\right) \left\langle \textbf{d}_{0}, \textbf{r}_{1}^{LS}\right\rangle = 0,
+	\end{equation}
+	where we could use $\left\langle \textbf{d}_0, \textbf{r}_1^{LS}\right\rangle = 0$, to prove that $\textbf{d}_{i-1} \perp \textbf{r}_i^{LS}$. \pdfmargincomment[author=Andras]{It can probably be proved, that $\textbf{r}_i^{LS}$ is perpendicular to all previous $\textbf{r}_j^{LS}$ and $\textbf{d}_j$}%
+	
+	
+	
+	
+	
+	\begin{lemma}\label{lemma:poly-ei}
 		Let $\mathbb{P}_{i,1}$ denote the space of polynomials of degree (at most) $i$ with constant coefficient $1$. For the CGLS iteration $i$ it then holds that
 		$$\mathbf{e}_i=q(A^TA)\mathbf{e}_0$$
 		with $q\in\mathbb{P}_{i,1}$. 
 	\end{lemma}
+	\begin{proof}
+		Since $\textbf{x}_i - \textbf{x}_0 \in \mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right)$ we can write it as a linear combination of the base with some coefficients $\tilde{c}_j$
+		\begin{equation}
+			\textbf{x}_i - \textbf{x}_0 = \sum_{j=0}^{i-1} \tilde{c}_j \left(A^T A \right)^j \textbf{r}_0^{LS} = \tilde{q}\left(A^T A \right) \textbf{r}_0^{LS},
+		\end{equation}
+		where $\tilde{q}(t) = \sum_{j=0}^{i-1} \tilde{c}_j t^j$ is a polynomial $\tilde{q} \in \mathbb{P}_{i-1}$. Therefore using $\textbf{r}_i^{LS} = A^T A \textbf{e}_i$ (see \autoref{eq:riLS-ei})
+		\begin{equation}
+			\textbf{x}_i - \textbf{x}_0 = \textbf{e}_i - \textbf{e}_0 = \tilde{q}\left(A^T A \right) A^T A \textbf{e}_0,
+		\end{equation}
+		which rearranged yields
+		\begin{equation}
+			\textbf{e}_i =  \tilde{q}\left(A^T A \right) A^T A \textbf{e}_0 + I \textbf{e}_0= \underbrace{\left[\tilde{q}\left(A^T A \right) A^T A + I\right]}_{q\left(A^T A\right) := } \textbf{e}_0.
+		\end{equation}
+		This $q\in\mathbb{P}_{i,1}$ evidently as required by the theorem. Since all these steps were equivalent the implies equivalence of the initial claims.
+	\end{proof}
 	
+	\begin{lemma}\label{lemma:poly-riLS}
+		For any polynomial $p$ and at any iterate $i$ we have
+		$$\mathbf{e}_i=p(A^TA)\mathbf{e}_0 \iff \mathbf{r}_i^{LS}=p(A^TA)\mathbf{r}_0^{LS}$$
+	\end{lemma}
+	\begin{proof}
+		This claim trivially follows from $\textbf{r}_i^{LS} = A^T A \textbf{e}_i$ (see \autoref{eq:riLS-ei}), the commutativity of scalar-matrix, matrix-with-itself products (so that $p(A^TA)A^TA = A^T A p(A^TA)$), and the invertibility of $A^T A$ thanks to it being assumed to be positive definite $A^T A \succ 0$.
+		\begin{equation}
+			\mathbf{e}_i=p(A^TA)\mathbf{e}_0 \iff
+			A^TA\mathbf{e}_i=p(A^TA)A^TA\mathbf{e}_0 \iff
+			 \mathbf{r}_i^{LS}=p(A^TA)\mathbf{r}_0^{LS} 
+		\end{equation}
+	\end{proof}
+	
+	Now \autoref{thm:CGPoly} can be proven.
+	\begin{theorem}\label{thm:CGPoly}
+		At CGLS iteration $k$ (at the end of the CGLS procedure) it holds that
+		$$\mathbf{x}_{\ast}-\mathbf{x}_k=R_k(A^TA)(\mathbf{x}_{\ast}-\mbf{x}_0)$$
+		with the \emph{Ritz polynomial} $R_k$ given by
+		$$R_k(t):=\prod_{j=1}^{k}\frac{\theta_j^{(k)}-t}{\theta_j^{(k)}},$$
+		in which $\theta_j^{(k)}$ denotes the $jth$ Ritz value of $A^{T}A$ i.e. the eigenvalues of $Q_k^{\ast}A^{T}AQ_k$, with $Q_k$ the orthogonal basis of $\mathcal{K}_k(A^{T}A,\mathbf{r}_0^{LS})$. $R_k$ is also sometimes called the residue polynomial.
+	\end{theorem}
+	\begin{proof}
+		As we have seen from \autoref{lemma:poly-ei} an $R_k\in \mathbb{P}_{i,1}$ polynomial must exist to satisfy the $\textbf{e}_k = R_k \left(A^T A \right) \textbf{e}_0$. From \autoref{lemma:poly-riLS} it follows that
+		\begin{equation}
+			\mathbf{r}_k^{LS}=R_k\left(A^TA\right)\mathbf{r}_0^{LS} 
+		\end{equation}
+		Let us at iteration $k$ denote the eigenvalues and corresponding eigenvectors of $Q_k^{\ast}A^{T}AQ_k$ by $\theta_j, \textbf{z}_j$, with the set of eigenvectors $\left\lbrace \textbf{z}_j \right\rbrace$ being independent. This means that 
+		\begin{equation}
+			Q_k^{\ast}A^{T} A Q_k \textbf{z}_j = \theta_j \textbf{z}_j. %\iff A^{T}AQ_k \textbf{z}_j = \theta_j \textbf{z}_j.
+		\end{equation}
+%		Since by definition $\textbf{r}_0^{LS} \in \mathcal{K}_i \left(A^T A,\textbf{r}_0^{LS} \right)$, we can write it using the orthogonal basis as $\textbf{r}_0^{LS} = Q_k \textbf{z}$.
+		Let's factor out one of the zeros $\lambda$ of the residue polynomials $R_k$, whereby the rest of the polynomia is in $\tilde{R}_k \in \mathbb{P}_{i-1}$ so that
+		\begin{equation}\label{eq:Rk-decomp}
+			\mathbf{r}_k^{LS}=\left(\lambda I_{n} - A^T A \right)\tilde{R}_k\left(A^TA\right)\mathbf{r}_0^{LS}
+		\end{equation}
+		Since $\tilde{R}_k$ is of degree at most $i-1$, then $\tilde{R}_k\left(A^TA\right)\textbf{r}_0^{LS} \in \mathcal{K}_i \left(A^T A,\textbf{r}_0^{LS} \right)$ and hence
+		\begin{equation}
+			\exists! \textbf{z}: \quad \tilde{R}_k\left(A^TA\right)\textbf{r}_0^{LS} = Q_k \textbf{z}.
+		\end{equation}
+		Substituting this into \autoref{eq:Rk-decomp} and multiplying both sides from the left by $Q_k^\ast$
+		\begin{equation}
+			Q_k^\ast \mathbf{r}_k^{LS} = \textbf{0} =
+				Q_k^\ast\left(\lambda I_{n} - A^T A \right)Q_k \textbf{z} = \left(\lambda I_{k} - Q_k^\ast A^T A Q_k  \right)\textbf{z}
+		\end{equation}
+		due to $\textbf{r}_k \perp  \mathcal{K}_i \left(A^T A,\textbf{r}_0^{LS} \right)$. If $\textbf{z} = \textbf{0}$, then $\textbf{r}_0^{LS} = 0 $ and therefore $\textbf{x}_0 = \textbf{x}_*$, which would mean we immediately guessed the right solution (very lucky breakdown). In the usual case though that would not be true, and $\textbf{z}$ is nonzero, which necessitates
+		\begin{equation}
+				Q_k^{\ast}A^{T} A Q_k \textbf{z} = \lambda \textbf{z}
+		\end{equation}
+		and thereby $\lambda$ is an zero of the Ritz polynomial and also of $R_k$. Since this is true for any eigenvalue\footnote{For simplicity we assumed unique eigenvalues},\pdfmargincomment[author=Andras]{Multiplicities be damned. Probably it follows from something trivial though}
+		 and we know that the constant coefficient of $R_k$ must be $1$ due to \autoref{lemma:poly-ei}, after normalizing the Ritz polynomial based on the Viete formulas (or just basic algebra), we arrive at the final form of $R_k$ as 
+		\begin{equation}
+			R_k(t)=\prod_{j=1}^{k}\frac{\theta_j^{(k)}-t}{\theta_j^{(k)}},
+		\end{equation}
+		thus proving the theorem.
+	\end{proof}
 	\newpage
 	
 
