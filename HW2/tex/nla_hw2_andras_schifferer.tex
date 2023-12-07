@@ -1,0 +1,431 @@
+\documentclass{article}
+\usepackage[top=2cm, bottom=2cm, left=2.2cm, right=2.5cm]{geometry}
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{enumerate}% http://ctan.org/pkg/enumerate
+
+\usepackage[]{pdfcomment}
+%As recommended by matlab2tikz
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage{nicematrix}
+\usepackage{calc}
+\usepackage{pgfplotstable}
+\usepackage{booktabs}
+\usepackage{csvsimple}
+\usepackage{etoolbox}
+\usepackage[style=alphabetic]{biblatex}
+\usepackage{amsthm}
+\bibliography{refs.bib}
+%% the following commands are needed for some matlab2tikz features
+\usetikzlibrary{plotmarks}
+\usetikzlibrary{arrows.meta}
+\usepgfplotslibrary{patchplots}
+\usepackage{grffile}
+%% you may also want the following commands
+\pgfplotsset{plot coordinates/math parser=false}
+%\newlength\figureheight
+%\newlength\figurewidth
+\usepackage{hyperref}
+\usepackage{placeins,nicefrac}
+\usepackage{xstring}
+\usepackage[]{pgfkeys}
+\usepackage{xfrac}
+\usepackage{breqn}%dmath, might be problematic sometimes
+\usepackage[newfloat]{minted}
+\usetikzlibrary{external}
+\usetikzlibrary{calc,math}
+\tikzexternalize[prefix=extern/]
+\usepgfplotslibrary{groupplots}
+\usepgfplotslibrary{colormaps}
+\usetikzlibrary{decorations.markings,patterns,patterns.meta,pgfplots.fillbetween}
+
+\usepackage[ruled,vlined,linesnumbered,algo2e]{algorithm2e}
+\usepackage{wrapfig}
+\usepackage{subcaption}
+\newenvironment{code}{\captionsetup{type=listing}}{}
+\SetupFloatingEnvironment{listing}{name=Source Code}
+\graphicspath{../plots/}
+
+\usepackage{wasysym}
+\usepackage{animate}
+\usepackage[symbol]{footmisc}
+
+%\usepackage{expl3}
+%\ExplSyntaxOn
+%\cs_set_eq:NN \fpeval \fp_eval:n
+%\ExplSyntaxOff
+
+\usetikzlibrary{fpu}
+\graphicspath{{../figs/}}
+\newcommand{\figurescale}{1.0}
+
+%\usepackage{titlesec}
+%\titleformat{\subsection}{\normalfont\large\bfseries}{Task \thesubsection}{1em}{}
+%\titleformat{\section}{\normalfont\Large\bfseries}{Assignment \thesection}{1em}{}
+%\titleformat{\subsubsection}{\normalfont\bfseries}{Question \thesubsubsection}{1em}{}
+\newcommand\mycommfont[1]{\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
+
+\newcommand{\stilltodo}[1]{{\color{red} UNFINISHED #1}}
+
+\makeatletter
+\newcommand{\trp}{%
+	{\mathpalette\@transpose{}}%
+}
+\newcommand*{\@transpose}[2]{%
+	% #1: math style
+	% #2: unused
+	\raisebox{\depth}{$\m@th#1\intercal$}%
+}
+
+\makeatother
+\newcommand{\diff}{\mathrm{d}}
+\newcommand{\mbf}[1]{\mathbf{#1}}
+\author{Andr\'as Schifferer, r0915705}
+\title{Numerical Linear Algebra [H03G1A]\\{\LARGE HW2}\\{\large Regularization}}
+\date{\today} 
+
+\pgfplotsset{plot coordinates/math parser=false}
+
+\makeatletter
+\providecommand{\leftsquigarrow}{%
+	\mathrel{\mathpalette\reflect@squig\relax}%
+}
+\newcommand{\reflect@squig}[2]{%
+	\reflectbox{$\m@th#1\rightsquigarrow$}%
+}
+\makeatother
+
+
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+\DeclareMathOperator*{\argmin}{arg\,min} % thin space, limits underneath in displays
+\DeclareMathOperator*{\argmax}{arg\,max} % thin space, limits underneath in displays
+
+\begin{document}
+	\maketitle
+	%The assignment is not yet finished unfortunately.
+	\tableofcontents
+	
+	%%%%%%%%%%%%%%%%%%%%
+	\section{Theory}
+	%%%%%%%%%%%%%%%%%%%%
+	The concept of ill-posedness was first studied by Jacques Hadamard in the beginning of the 20th century. Hadamard essentially defined a problem to be well-posed (“bien posé”) if the solution is unique and if it is a continuous function of the data. Contrary, an ill-posed problem is one that is not
+	uniquely solvable or not continuous as a function of the data i.e. if small perturbation of the data can cause large perturbations in the solution.
+	The typical example of an ill-posed problem is a Fredholm integral equation of the first kind with a square integrable kernel
+	$$g(s)=\int_{a}^{b}K(s,t)f(t) \,d t,\quad c\leq s\leq d$$
+	with given K and g, where f is an unknown solution.\\
+	There are certain finite-dimensional discrete problems that have properties very similar to those of ill-posed problems, such as being highly sensitive to high frequency perturbations. Examples include the discretizations of the above integral equations. We can be more precise and say that a system of
+	the form
+	$$A\mathbf{x}=\mathbf{b}, A\in \mathbb{R}^{m\times n}$$
+	is a discrete ill-posed problem if both the following conditions are satisfied:
+	\begin{itemize}
+		\item[1.]the singular values of A decay gradually to zero
+		\item[2.]the ratio between largest and smallest singular values is large
+	\end{itemize}
+	Criterion 2 implies that the matrix A is ill-conditioned, while criterion 1 implies that there is no
+	“nearby” problem with a well-conditioned coefficient matrix and with well-determined numerical rank.\\
+	Being ill-posed is not a fundamental barrier to systems being solvable. Rather, the ill-conditioning
+	means that standard solution procedures are not useful. Indeed, the many small singular values of
+	a discrete ill-posed problem essentially make the problem (numerically) under determined. One has
+	to resort to more sophisticated methods, incorporating additional information about the solution, in
+	order to compute a useful solution. This is the central idea behind regularization methods. When such `side constraints’ are introduced, one must give up the requirement $Ax = \mbf{b}$ exactly in the linear system and instead seek a solution that provides a fair balance between minimizing some cost function that encodes the side constraints and minimizing the residual norm $\|A\mbf{x} -\mbf{b}\|_2$ .\\
+	
+	The further parts of the assignment use heavily the package by \textcite{regtools}.
+	
+	\subsection{Tikhonov regularization}
+	Undoubtedly, the most common and well-known form of regularization is Tikhonov regularization.
+	Here, the idea is to define the regularized solution $\mbf{x}_{\lambda}$ (as a function of $\lambda$) as the minimizer of the following weighted
+	combination of the residual norm and a side constraint
+	\begin{equation}\label{eq:basicTikh}
+		\mbf{x}_{\lambda} = \argmin_{\mbf{x}} \{\|A\mbf{x} - \mbf{b}\|_2^2 + \lambda^2 \|L(\mbf{x} - \mbf{x}^{\ast} )\|_2^2\},
+	\end{equation}
+	where the regularization parameter $\lambda$ controls the weight given to minimization of the side constraint
+	relative to minimization of the residual norm. The side constraint is captured by the matrix $L$. One
+	typical example is $L = I_n$ . In this case, a large $\lambda$ (strong regularization) favors a small solution norm at the cost of large residual norm, while a small $\lambda$ has the opposite effect. Other choices for $L$ are also
+	possible. For example, $L$ can be a discrete version of the second derivative operator. We can even
+	arrange it so that
+	\begin{equation}\label{eq:SobolevTikh}
+		\mbf{x}_{\lambda} = \argmin_{\mbf{x}} \{\lambda_0^2\|A\mbf{x} - \mbf{b}\|_2^2 + \sum_i\lambda^2_i \|L_i(\mbf{x} - \mbf{x}^{\ast} )\|_2^2\}.
+	\end{equation}
+	In this homework $\mbf{x}^{\ast}=0$ is assumed. If the different $L_i$'s are (discrete) derivatives, the rightmost
+	term in \ref{eq:SobolevTikh} is called a Sobolev norm.\\
+	%\textbf{Give some examples of discrete derivatives of order 1 and 2. Take into account that discrete derivatives can be forward or backwards!}\\
+	\subsubsection*{Discrete derivatives}
+	On some equvidistant mesh $x_i = a + i h $, one can easily construct discrete derivatives for a sufficiently smooth\footnote{A usual requirement might be that the higher order derivatives are bounded.} function by performing a Taylor expansion around a few select gridpoints, and then selecting multiplication factors so that their sum will result in $f^\prime(x_i)$, with the remaining terms being nonzero only for those terms which are of order $\mathcal{O}(h^{p})$, where $p$ is the often called accuracy. After selcting the nodes this becomes the matter of a simple set of linear equations (Vandermonde matrix structure), which can easily be solved. Some of these coefficients are given as an example in \autoref{table:finite-diff} (called forward-, backward- and finite differences respectively). Higher order drivatives can also be constructed to estimate $f_i^{\prime\prime}, f_i^{\prime\prime\prime}, \dots$.
+	
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{|c|c|c|c|}
+			\hline
+			$p$ & $c_{i-1}$ & $c_{i}$ & $c_{i+1}$\\\hline\hline
+			1 & $0$ & $-\nicefrac{1}{h}$ & $\nicefrac{1}{h}$ \\\hline
+			1 & $-\nicefrac{1}{h}$ & $\nicefrac{1}{h}$ & $0$ \\\hline
+			2 & $-\nicefrac{1}{2h}$  & $0$ & $\nicefrac{1}{2h}$ \\\hline
+		\end{tabular}
+		\caption{Finite difference coefficients for estimating $f^\prime(x_i) = \sum_i c_i f_i + \mathcal{O}\left(h^p\right)$ with accuracy of order $p$}\label{table:finite-diff}
+	\end{table}
+	
+	A matrix to penalize the solution based on large norm derivatives could be constructed as 
+	\begin{equation}
+		L = \frac{1}{h}\begin{bmatrix}
+			-1 & 1 & 0 & 0 &\dots & 0 & 0 & 0 \\
+			 -\nicefrac{1}{2} & 0 & \nicefrac{1}{2} & 0 &\dots & 0  & 0 & 0 \\
+			 0 & -\nicefrac{1}{2} & 0 & \nicefrac{1}{2} &\dots & 0 & 0 & 0 \\
+			0& 0 & -\nicefrac{1}{2} & 0 &\dots & 0 & 0 & 0 \\
+			& & & & \ddots & & \\
+			0 & 0 & 0 & 0 &\dots & -\nicefrac{1}{2} & 0 & \nicefrac{1}{2} \\
+			0 & 0 & 0 & 0 &\dots & 0 & 1 & -1 \\
+		\end{bmatrix},
+	\end{equation}
+	where on the ends we sacrafice some accuracy, due to not having extra information about the boundary conditions.
+	
+	\subsubsection*{Subdomain Norm \& Boundary Condition Constraints}
+	These derivative costs are not the only possible such $L_i$'s. Another important class is seminorm matrices, which include norm constraints only on a subdomain of the solution and boundary condition restraints.
+	
+	To restrict the norms only on a subdomain we could, using \autoref{eq:SobolevTikh}'s notation, have a set of indicies in the entire domain $\mathcal{I}\subset \left\{1,2,\dots, N\right\}$, and then simply set 
+	\begin{equation}
+		L_i = \begin{cases}
+			\textbf{e}_i &\mathrm{for} \, i\in \mathcal{I},\\
+			\textbf{0} &\mathrm{for} \, i\notin \mathcal{I},
+		\end{cases}
+	\end{equation}
+	with $\textbf{e}_i$ being the $i^{\mathrm{th}}$ unit vector, whose $i^{\mathrm{th}}$ component is $1$.
+	In more general, given an arbitrary matrix $L$, the components of $\textbf{x}- \textbf{x}^\ast$ lying in the nullspace of $L$ ($\mathcal{N}\left(L\right)$), will no contribute to the norm, therefore we restrict this criteria to $\mathcal{N}^\perp \left(L\right)$ (the orthogonal complement of the nullspace).\\
+	
+	Setting boundary conditions using external information could be as easy as having $\mathcal{I} = \left\lbrace 1, N\right\rbrace$ and $\textbf{x}^\ast = \alpha_1 \textbf{e}_1 + \alpha_N \textbf{e}_N$, thereby enforcing Dirichlet boundary coniditions on the two ends of the domains. More complicated coefficients could be set with the help of finite differences.
+	%\textbf{What would this look like? Give a simple example. Show that the expression \ref{eq:SobolevTikh} is equivalent to equation \ref{eq:basicTikh} with L the Cholesky factor (in Matlab	convention) of $\sum_i\lambda_i^2L_i^TL_i$. Can this be done? Be precise.}
+	
+	
+	To see the equivalence between \autoref{eq:basicTikh} and \autoref{eq:SobolevTikh}, the rightmost term can be manipulated in the following way
+	\begin{equation}
+		\sum_i\lambda^2_i \|L_i\left(\mbf{x} - \mbf{x}^{\ast} \right)\|_2^2 = \sum_i\lambda^2_i \left(\mbf{x} - \mbf{x}^{\ast} \right)^T L_i^T L_i\left(\mbf{x} - \mbf{x}^{\ast} \right) =  \left(\mbf{x} - \mbf{x}^{\ast} \right)^T \underbrace{\left( \sum_i\lambda^2_i L_i^T L_i \right)}_{\tilde{L}:=} \left(\mbf{x} - \mbf{x}^{\ast} \right)
+	\end{equation}
+	where $\tilde{L}$ is constructed from a summation of finitely many symmetric diadic matrices. Since summatrion preserves the symmetry $\tilde{L}$ will also be symmetric. Furthermore, due to the initial definition of $\tilde{L}$ we can see that as the sum is nonegative, $\tilde{L}$ must necessarily be positive definite (we are only considering real matrices in this discussion). Hence, the conclusion can be drawn, that there must exist a Cholesky factorization of $\tilde{L} = L^T L$ ($L$ being ironically upper triangular in this case, contrary to usual conventions).
+	
+	\begin{theorem}\label{thm:GSVD} (see \textcite{gsvd_paige_saunders} for full theorem and proof)
+		Given matrices $A \in \mathbb{R}^{m\times n}$ and $B\in\mathbb{R}^{p\times n}$ with $m \geq n \geq p$,
+		there exists orthogonal $U \in \mathbb{R}^{m\times n}$ and $V \in \mathbb{R}^{p\times p}$ together with an invertible $X \in \mathbb{R}^{n\times n}$ such that
+		$$A=U\begin{pmatrix}
+			\Sigma&\\
+			&I_{n-p}
+		\end{pmatrix}X^{-1}$$
+		and
+		$$B=V[M \enspace 0]X^{-1}$$
+		with both $\Sigma=\text{diag}(\sigma_1,\ldots,\sigma_p)$ and $M=\text{diag}(\mu_1,\ldots,\mu_p)$ diagonal matrices with nonnegative entries such that $0\leq\sigma_1\ldots\leq\sigma_p\leq 1\geq\mu_1\geq\ldots\geq\mu_p> 0$. The values $\gamma_i:=\sigma_i/\mu_i$ are referred to as the generalized singular values. In addition we have $\mu_i^2+\sigma_i^2=1$.
+	\end{theorem}
+%	\textbf{Mind the difference in ordering of the $\sigma$'s to the usual ordering!}
+	We can apply \autoref{thm:GSVD} to $A, L$, which enures us that the following decomposition exists $B = L = V \left[M \, 0\right] X^{-1}$ and
+	$$A = U \begin{bmatrix}
+		\Sigma&\\
+		&I_{n-p}
+	\end{bmatrix} X^{-1}.$$
+	Hence, the optimization problem of \autoref{eq:basicTikh} is transformed into 
+	\begin{dmath}
+		\mbf{x}_{\lambda} = \argmin_{\mbf{x}} \left\lbrace \left\|U \begin{bmatrix}
+			\Sigma&\\
+			&I_{n-p}
+		\end{bmatrix} \smash[b]{\underbrace{X^{-1}\mbf{x}}_{\textbf{y}:=}} - \mbf{b}\right\|_2^2  + \lambda^2 \left\|V \left[M \, 0\right] X^{-1}(\mbf{x} - \mbf{x}^{\ast} )\right\|_2^2\right\rbrace
+		= X \argmin_{\mbf{y}} \left\lbrace \left\| \begin{bmatrix}
+			\Sigma&\\
+			&I_{n-p}
+		\end{bmatrix} \textbf{y} - U^T \mbf{b}\right\|_2^2  + \lambda^2 \left\|\left[M \, 0\right] \textbf{y} - \left[M \, 0\right] X^{-1} \mbf{x}^{\ast}\right\|_2^2\right\rbrace 
+		= X \argmin_{\mbf{y}} \left\lbrace \left\|
+			\begin{bmatrix}
+					\Sigma&0\\
+					0&I_{n-p}\\
+					\lambda M & 0
+			\end{bmatrix}
+		  \textbf{y} - \begin{bmatrix}
+		  	U^T \mbf{b}\\
+		  	\begin{bmatrix}
+		  		\lambda M & 0
+		  	\end{bmatrix} \smash[b]{\underbrace{X^{-1}\mbf{x}^\ast}_{\textbf{y}^\ast:=}}
+		  \end{bmatrix}\right\|_2^2 \right\rbrace\footnotemark
+	\end{dmath}\footnotetext{Keep in mind that $U^T \textbf{b} \in \mathbb{R}^n$, so the dimensions work out in the matrix}
+	With the change of variables this problem can be broken down with one where all of the components of $\textbf{y} = \left[y_i\right]_{i=1,2,\dots,n}$ can be broken down, due to the diagonal matrices involved, to its own 2nd degree polynomial term in the overall norm, thereby
+	\begin{equation}\label{eq:singvar-tik}
+		\textbf{x}_{\lambda} = X \argmin_{\mbf{y}} \left\lbrace \sum_{i=1}^{n} g_i (y_i) \right\rbrace 
+	\end{equation}
+	with 
+	\begin{equation}
+		g_i (y_i) = \begin{cases}
+			\left(\sigma_i y_i - \textbf{u}_i^T \textbf{b} \right)^2 + \lambda^2 \mu^2_i \left(y_i-y_i^\ast\right)^2, & 1 \leq i \leq p\\
+			\left(y_i-\textbf{u}_i^T \textbf{b} \right)^2, & p+1 \leq i \leq n.
+		\end{cases}
+	\end{equation}
+	
+	Since all of the terms are positive and single variable in the sum in \autoref{eq:singvar-tik}, the optimum in $\textbf{y}$, denoted by ${\textbf{y}}_\lambda$, can be obtained using single variable calculus ($g_i^\prime({y}_{\lambda, i}) = 0$), whereby
+	\vspace{0.2cm}
+	\begin{equation}
+		{y}_{\lambda,i} = \begin{cases}
+			{\smash[t]{\overbrace{\frac{\sigma_i^2}{\sigma_i^2 + \lambda^2 \mu_i^2}}^{f_i := }}}
+			\cdot \left(\frac{\textbf{u}_i^T \textbf{b}}{{\normalsize\sigma_i}} + \frac{\lambda^2}{\gamma_i^2}y_i^\ast \right), & 1 \leq i \leq p\\
+			\textbf{u}_i^T \textbf{b}, & p+1 \leq i \leq n.
+		\end{cases}
+	\end{equation}
+	From this point onwards, we will assume $\textbf{y}^\ast=\textbf{x}^\ast=\textbf{0}$, so as to simplify the forthcoming formulas, however a similar argument could be used to solve the more general case. 
+	
+	The $f_i$'s are called filter factors, and can be reformaulated based on what \autoref{thm:GSVD} provides, namely as
+	\begin{equation}
+		f_i = \frac{\sigma_i^2}{\sigma_i^2 + \lambda^2 \mu_i^2} = \frac{\left(\nicefrac{\sigma_i}{\mu_i}\right)^2}{\left(\nicefrac{\sigma_i}{\mu_i}\right)^2 + \lambda^2}
+		= \frac{\gamma_i^2}{\gamma_i^2 + \lambda^2}.
+	\end{equation} 
+	Expressing $\textbf{x}_\lambda$, using the notation that the $i^{\mathrm{th}}$ column of $X$ is $\textbf{x}_i$, 
+	\begin{equation}
+		\mbf{x}_{\lambda} = X \textbf{y}_\lambda=\sum_{i=1}^pf_i\frac{\mbf{u}_i^T\mbf{b}}{\sigma_i}\mathbf{x}_i+
+		\sum_{i=p+1}^n\mbf{u}_i^T\mbf{b}\,\mathbf{x}_i
+	\end{equation}
+		
+	Similarly to the usual discrete Picard condition, the more general case for L also leads to a Picard
+	condition, but now in terms of the generalized singular values. That is, the discrete Picard condition
+	in case of $L \neq I_n$ is satisfied whenever the $|u^T_i b|$ (with U from the GSVD) decay at least as fast as
+	the generalized singular values.
+	
+	\subsection{TSVD/TGSVD and DSVD/DGSVD regularization}
+	A fundamental observation regarding the Tikhonov method is that it circumvents the ill-conditioning of $A$ by introducing a new problem with a well-conditioned coefficient matrix with full rank 
+	\begin{equation*}
+		\begin{bmatrix}
+			\Sigma&\\&I_{n-p}
+		\end{bmatrix}
+	\end{equation*}.\pdfmargincomment[author=András]{I am not sure whether this is matrix he meant}
+	
+	A different way to treat the ill-conditioning of A is to derive a new problem with a well-conditioned rank deficient coefficient matrix (well-conditioned meaning that the nonzero singular values span a limited range). A fundamental result about rank deficient matrices is the Eckart-Young theorem. It states that the closest rank-$k$ approximation $A_k$ to $A$ (measured in 2-norm) is obtained
+	by truncating the SVD expansion at $k$, i.e., $A_k$ is given by
+	$$A_k=\sum_{i=1}^k\sigma_i\mbf{u}_i\mbf{v}_i^{T}$$
+	The truncated SVD (TSVD) regularization method is based on this observation in that one solves the
+	problem
+	$$\min\|\mbf{x}\|_2\quad s.t. \quad \min\|A_k\mbf{x}-\mbf{b}\|.$$
+	The solution to this problem is given by
+	\begin{equation}\label{eq:TSVD-sol}
+		\mbf{x}_k=\sum_{i=1}^{k}\frac{\mbf{u}_i^T\mbf{b}}{\sigma_i}\mbf{v}_i
+	\end{equation}
+	Let us note that the TSVD solution $\mbf{x}_k$ is the only solution that has no component in the numerical
+	null-space of A, spanned by columns of V with numbers from $k + 1$ to $n$.
+	Instead of using filter factors $0$ and $1$ as in TSVD, one can introduce a smoother cut-off by means
+	of filter factors $f_i$ defined as
+	$$f_i=\frac{\sigma_i}{\sigma_i+\lambda}$$
+	thus getting the damped SVD (DSVD). The new filter factors decay slower than Tikhonov filter factors
+	and thus introduce less filtering.
+	We can extend these to the generalized context as well. In this case we have for the truncated
+	GSVD (TGSVD) that
+	\begin{equation}\label{eq:TGSVD-sol}
+			\mbf{x}_k=X\begin{bmatrix}
+			\hat{\Sigma}_k&\\
+			&I_{n-p}
+		\end{bmatrix}
+		U^{T}\mbf{b}
+	\end{equation}
+	in which $\hat{\Sigma}_k=\text{diag}(0,\ldots,0,\sigma^{-1}_{p-k+1},\ldots,\sigma^{-1}_p)$.
+	When $L=I_{n}$, i.e. $p=n$, then the GSVD will just reduce to $VMX^{-1} = I \Leftrightarrow X^{-1} = V^T M \Leftrightarrow V M^{-1} $, which results in 
+	\begin{equation}\label{eq:TGSVD-sol-LeqI}
+		\textbf{x}_k = V M \begin{bmatrix}
+			\hat{\Sigma}_k & \\ & I_{0\times 0}
+		\end{bmatrix}U^T \textbf{b} = V
+		\begin{bmatrix}
+			0 & & & & &  \\& \ddots& & & &  \\ & &0 & & &  \\
+			& & & \gamma_{n-k+1}^{-1} & & \\& & & & \ddots& \\& & & & &\gamma_{n}^{-1}
+		\end{bmatrix}U^T \textbf{b}
+	\end{equation}
+	The equivalence between this expression and the result obtained from the TSVD can be established by remembering that the ordering of the $\gamma_i$ is increasing, i.e. $\gamma_i \leq \gamma_j \Leftrightarrow i \leq j$, while for the regular SVD it is the exact opposite (decreasing). Therefore the ordering of the columns of $U$ and $V$ must also be flipped between the two. At the same time since the SVD is uniquely defined for each matrix, with a fixed ordering of the singular values, which together with the rest of the observations implies that \autoref{eq:TGSVD-sol-LeqI} (\autoref{eq:TGSVD-sol} with the assumption that $L=I$) is equivalent to \autoref{eq:TSVD-sol}. By the definition of the GSVD (see \autocite{gsvd_paige_saunders}) it must also follow that the generalized and regular singular values must be the same (with given ordering).
+	
+	Numerically this can be tested, by the provided $K$ matrix in \texttt{Test.mat}. The equivalent $U$ and $V$ matrices are compared in \autoref{fig:tgsvd_UV_comp}, with the help of $P=P^T$ permutation matrix (ones only on the anti-diagonal). After their columns are rearranged by $P$, they look orthogonal to eachother (each corresponding vector pair multiplied gives 1, while all other products give nearly 0). Especially for low $k$ truncation this seems like a stable algorithm. This is further corroborated by the proximity of the corresponding singular values as shown by \autoref{fig:tgsvd_sing_vals}.
+	
+	\begin{figure}[h!]
+		\centering
+		\resizebox{\textwidth}{!}{\input{../plots/tgsvd_UV.tex}}
+		\caption{Comparing the $U$ and $V$ values from the regular SVD (\texttt{MATLAB} \text{svd}) with the ones obtained via the GSVD (by using \texttt{cgsvd}, the subscript $g$ indicating matrices calculated from this) by checking their orthogonality. Both of these are close to the identity as expected, with numerical errors increasing towards higher indicies}\label{fig:tgsvd_UV_comp}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering
+		\resizebox{0.7\textwidth}{!}{\input{../plots/tgsvd_sing_vals.tex}}
+		\caption{Comparing the $\mu_i$ singular values from the regular SVD (\texttt{MATLAB} \text{svd}) with generalized singular values $\gamma_{n-i}$ GSVD (by using \texttt{cgsvd}). The absolute error is constant while the relative error grows as the magnitude of the singular values decreases.  Numerical errors increasing towards higher indicies}\label{fig:tgsvd_sing_vals}
+	\end{figure}
+%	 \textbf{Show that if $L=I$ the TSVD solution and TGSVD solution coincide. Hint: test your argument on the provided matrix \texttt{Test.mat}, using \texttt{cgsvd} from \texttt{regtools} and \texttt{svd} from Matlab. Verify that all your claims hold.}
+	Again, we can dampen the TGSVD by, rather than using filter factors 0 and 1, using the filter
+	factors
+	$$f_i=\frac{\gamma_i}{\gamma_i+\lambda}.$$
+	\FloatBarrier
+	
+	\subsection{Conjugate gradient regularization}
+	The conjugate gradient method is an iterative Krylov method for the solution of linear systems. It is only defined for symmetric positive semi-definite systems, but it can in our case be applied to the normal equations
+	$$A^{T}A\mbf{x}=A^{T}\mbf{b}$$
+	the solution of which will be called $\mbf{x}_{\ast}$. %\textbf{You can assume that $A^TA$ is positive definite.}
+	Going forward we will assume that $A^T A \succeq 0$, which is always true for real matrices.
+	This is given in \autoref{alg:CGLS}.
+	
+	\begin{algorithm2e}[ht]
+		\SetKwInOut{Input}{input}
+		\SetKwInOut{Output}{output}
+		\SetKw{Init}{init}{}{}
+		\SetAlgoLined
+		\Input{Starting vector $\mbf{x}_0$, number of iterations $k$}
+		\Output{CG solution $\mbf{x}_{k}$}
+		\Init{compute initial residual $\mbf{r}_0:=\mbf{b}-A\mbf{x}_0$ and initial auxiliary vector $\mbf{d}_0:=A^T\mbf{r}_0$}\\
+		\For{$i=1\ldots k$}{
+			$a_i=\|A^T\mbf{r}_{i-1}\|_2^2/\|\mbf{d}_{i-1}\|_A^2$\\
+			$\mbf{x}_{i}=\mbf{x}_{i-1}+a_i\mbf{d}_{i-1}$\label{line:cgls:x-update}\\
+			$\mbf{r}_{i}=\mbf{r}_{i-1}-a_iA\mbf{d}_{i-1}$\label{line:cgls:r-update}\\
+			$\beta_i=\|A^T\mbf{r}_i\|_2^2/\|A^T\mbf{r}_{i-1}\|_2^2$\\
+			$\mbf{d}_i=A^T\mbf{r}_{i}+\beta_i\mbf{d}_{i-1}$
+		}
+		\caption{Conjugate Gradient Algorithm for the normal equations (CGLS)}
+		\label{alg:CGLS}
+	\end{algorithm2e}
+	
+	
+	Typically, $\mathbf{x}_{0}=0$ is assumed.  Some notation:
+	\begin{itemize}
+		\item $\mathbf{r}^{LS}_i=A^T\mathbf{r}_i$, the residual of the normal equation (residual in the least squares sense),
+		\item $\mathcal{K}_i(A^TA,\mathbf{r}_0^{LS})=\text{span}\{\mathbf{r}_0^{LS},A^TA\mathbf{r}_0^{LS},\ldots,(A^TA)^{i-1}\mathbf{r}_0^{LS}\}$ is the Krylov subspace associated to the CGLS iteration  $i$.
+		\item $\mbf{e}_i:=\mbf{x}_{\ast}-\mathbf{x}_i$
+		\item $\langle\mbf{v},\mbf{w}\rangle_{A}:=\langle A\mbf{v},A\mbf{w}\rangle$, and the norm $\|\mbf{v}\|_A$ and orthogonality $ \mbf{v}\perp_{A}\mbf{w}$ are defined correspondingly.
+	\end{itemize}
+%	\textbf{If you find it simpler, you can restrict your derivations to this case. Analyze the algorithm (briefly). In particular, show that $\mathbf{r}_i=\mathbf{b}-A\mathbf{x}_i$. You might need this later...}
+	In general the Conjugate Gradient Algorithm is analysed from the prespective of gradient steps. First let us look at some properties of the algorithm to better understand how in converges to a solution of the normal equation. 
+	
+	If we multiply \autoref{line:cgls:x-update} by $A$, adding it to \autoref{line:cgls:r-update}, then the term with $d_i$ drops out, and we are left with an expression which seems to be independent of the $i$ index, thereby
+	\begin{equation}
+		\textbf{r}_i+A\textbf{x}_i = \textbf{r}_{i-1}+A\textbf{x}_{i-1} = \dots = \textbf{r}_0 +A\textbf{x}_0 = \textbf{b}. 
+	\end{equation}
+	From this it follows that 
+	\begin{equation}
+		\textbf{r}_i = \textbf{b} - A \textbf{x}_i,
+	\end{equation}
+	meaning that $\textbf{r}_i$ continues to be the residue belonging to the respective $\textbf{x}_i$ approximate solution at each iteration.
+	
+	Another relatively easy observation is that 
+	\begin{equation}\label{eq:riLS-ei}
+		\textbf{r}_i^{LS} = A^T \textbf{r}_i = A^T \left(b - A \textbf{x}_i\right) = A^T b - A^T A \textbf{x}_i = A^T A \textbf{x}_\ast - A^T A \textbf{x}_i = A^T A \left(\textbf{x}_\ast - \textbf{x}_i\right) = A^T A \textbf{e}_i .
+	\end{equation}
+	
+	Now the conjugate gradient iteration can be described completely as the system of recurrences that generates the (unique) sequence of iterates satisfying $\{\mbf{x}_i\in \mathbf{x}_0 + \mathcal{K}_i(A^TA,\mathbf{r}_0^{LS})\}_i$ such that at step $i$ $\|\mbf{e}_i\|_A$ is minimized. %\textbf{You do not have to prove this, but you can certainly try. Do show that $\|\mbf{e}_i\|_A$ being minimized in this case is equivalent to $\mathbf{e}_i \perp_A \mathcal{K}_i(A^TA,\mathbf{r}_0^{LS})$. Show that $\mathbf{r}_i^{LS}=A^*A\mathbf{e}_i$. Use this to show that $\mathbf{e}_i \perp_A \mathcal{K}_i(A^TA,\mathbf{r}_0^{LS})$ is also equivalent to $\mathbf{r}_i^{LS} \perp \mathcal{K}_i(A^TA,\mathbf{r}_0^{LS})$. Also use it to show the following two simple lemmas:}
+	
+	This minimization claim is at the same time equivalent to $\textbf{e}_i \perp_{A} \mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right)$, which can be shown indirectly.
+	\begin{itemize}
+		\item Suppose that $\textbf{e}_i$ is a minimizer as defined before, but $\textbf{e}_i \not\perp_{A} \mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right)$. Then inner product $\langle\cdot,\cdot\rangle_{A}$, we can decompose $\textbf{e}_i$ into a parallel and perpendicular component with $\mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right)$ as $\textbf{e}_i = \textbf{e}_i^\parallel + \textbf{e}_i^\perp$. This implies however that $\|\textbf{e}_i\|_A = \|\textbf{e}_i^\parallel\|_A + \|\textbf{e}_i^\perp \|_A$. But then this implies that error corresponding to $x_i-\textbf{e}_i^\parallel$ (based on the definition of $\textbf{e}_i$, this is also a valid $x_i$ since it is in the affine space) would be $\textbf{e}_i^\perp$, which leads to $\left\|\textbf{e}_i^\perp \right\|_A < \left\|\textbf{e}_i \right\|_A$ contradicting the original assumption of $\left\|\textbf{e}_i \right\|_A$ being minimal.
+		\item Since the minimizer of this quadratic function must exist and be unique based on $A^T A \succeq 0$ we only need to see, that there is only one $\textbf{x}_i$ with which $\textbf{e}_i$ is perpendicular to the affine subspace. Let us suppose that there are two different $x_i^1, x_i^2 \in \mathbf{x}_0 + \mathcal{K}_i(A^TA,\mathbf{r}_0^{LS})$  for which $\textbf{e}_i^1,\textbf{e}_i^2 \perp_{A} \mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right)$. Therefore $\textbf{e}_i^1 - \textbf{e}_i^2 \perp_{A} \mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right)$, but that results in $\textbf{x}_i^1 - \textbf{x}_i^2 \perp_{A} \mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right)$. This is a contradiction, since $x_i^1-x_i^2 \in  \mathcal{K}_i(A^TA,\mathbf{r}_0^{LS})$, which leaves  $x_i^1=x_i^2$ breaking the uniqueness.
+	\end{itemize}
+	It follows from the definition of $\perp_{A}$ and \autoref{eq:riLS-ei} that this condition is equivalent to 
+	\begin{equation}
+		\textbf{e}_i \perp_{A} \mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right) \Leftrightarrow \left\langle \textbf{e}_i, \textbf{k} \right\rangle=0 \quad\forall\textbf{k}\in\mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right) \Leftrightarrow \underbrace{\textbf{e}_i^T A^T A}_{\left(\textbf{r}_i^{LS}\right)^T}  \textbf{k}=0 \quad\forall\textbf{k}\in\mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right),
+	\end{equation}
+	and following our traces back we obtain
+	\begin{equation}
+		\textbf{e}_i \perp_{A} \mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right) \Longleftrightarrow
+		\left\langle\textbf{r}_i^{LS} , \textbf{k}\right\rangle=0 \quad\forall\textbf{k}\in\mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right) \Longleftrightarrow
+		\textbf{r}_i^{LS} \perp \mathcal{K}_i\left(A^T A, \textbf{r}_0^{LS} \right)
+	\end{equation}
+	\begin{lemma}
+		Let $\mathbb{P}_{i,1}$ denote the space of polynomials of degree (at most) $i$ with constant coefficient $1$. For the CGLS iteration $i$ it then holds that
+		$$\mathbf{e}_i=q(A^TA)\mathbf{e}_0$$
+		with $q\in\mathbb{P}_{i,1}$. 
+	\end{lemma}
+	
+	\newpage
+	
+
+\FloatBarrier
+\newpage
+\printbibliography
+\end{document}
