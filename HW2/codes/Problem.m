@@ -60,6 +60,17 @@ classdef Problem
             if strcmp(obj.method, 'Tikh')
                 obj.func = @tikhonov;
             end
+            if strcmp(obj.method, 'tsvd')
+                obj.parname = "k";%discreete parameter
+                if isempty(L)
+                   obj.func = @tsvd;
+                else
+                   obj.func = @tgsvd;
+                end
+            end
+            if strcmp(obj.method, 'dsvd')
+                obj.func = @dsvd;
+            end
         end
 
         function obj=gen_data(obj)
@@ -68,8 +79,8 @@ classdef Problem
             obj.rho = zeros(npars,1);
             obj.Xs = zeros(obj.n,npars);
             %% Solutions
-            if strcmp(obj.method, 'Tikh')
-                if isempty(obj.L)
+            if strcmp(obj.method, 'Tikh') || strcmp(obj.method, 'tsvd') || strcmp(obj.method, 'dsvd')
+                if isempty(obj.L)%difference between general and nongeneral
                     [x_lambda, rho, eta] = obj.func(obj.U, obj.s, obj.V, obj.b, obj.pars); %#ok<PROP> 
                 else
                     [x_lambda, rho, eta] = obj.func(obj.U, obj.sm, obj.X, obj.b, obj.pars); %#ok<PROP> 
@@ -77,7 +88,7 @@ classdef Problem
             end
 
             %% Filter factors
-            if strcmp(obj.method, 'Tikh')
+            if strcmp(obj.method, 'Tikh') || strcmp(obj.method, 'tsvd') || strcmp(obj.method, 'dsvd')
                 if isempty(obj.L)
                     F = fil_fac(obj.s,obj.pars, obj.method); %#ok<PROP> 
                 else
@@ -93,6 +104,13 @@ classdef Problem
             [obj.ind_best_L,~] = find_largest_curvature(obj.rho,obj.eta, obj.pars);
             % GCV
             obj.gcv_vals = obj.rho.^2./(obj.m-obj.n+obj.p-sum(obj.F)').^2;
+            if isempty(obj.L)%difference between general and nongeneral
+                [~,G,~] = gcv_mod(obj.U,obj.s,obj.b, obj.pars, obj.method);
+            else
+                [~,G,~] = gcv_mod(obj.U,obj.sm,obj.b, obj.pars, obj.method);
+            end
+            close(gcf);
+            obj.gcv_vals = G;
             [~, obj.ind_best_gcv] = min(obj.gcv_vals);
 
         end
