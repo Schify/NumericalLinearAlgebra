@@ -273,7 +273,7 @@
 		= \frac{\gamma_i^2}{\gamma_i^2 + \lambda^2}.
 	\end{equation} 
 	Expressing $\textbf{x}_\lambda$, using the notation that the $i^{\mathrm{th}}$ column of $X$ is $\textbf{x}_i$, 
-	\begin{equation}
+	\begin{equation}\label{eq:tik-gsvd-sol}
 		\mbf{x}_{\lambda} = X \textbf{y}_\lambda=\sum_{i=1}^pf_i\frac{\mbf{u}_i^T\mbf{b}}{\sigma_i}\mathbf{x}_i+
 		\sum_{i=p+1}^n\mbf{u}_i^T\mbf{b}\,\mathbf{x}_i
 	\end{equation}
@@ -557,7 +557,7 @@
 		\mathbb{E}\left[\textbf{u}_i^T \textbf{e}\right] = \varepsilon.
 	\end{equation} 
 	If we denote the solution to the exact regularized problem by $\bar{\textbf{b}}_\lambda$, then we can track the contribution of  $\bar{\textbf{b}}_\lambda$ and the solution contribution from the error ($\textbf{x}_\lambda^{e}$) to the magnitude of the perturbed solution and the residue of the perturbed equation. This behaviour is shown in \autoref{fig:Lcurve-theory}, the so called L-curve is the sum of these two contributions. Ideally we would want $\left\| {\textbf{x}} \right\|$ as close to $\left\| \bar{\textbf{x}} \right\|$ as possible, while keeping the residue $\left\|A\bar{\textbf{x}}_\lambda - \bar{\textbf{b}}\right\|$ to a minimum. Therefore the ideal choice intuitively lies in the corner of the L-curve. Usually this point is calculated based on curvature automatically.
-	\begin{figure}
+	\begin{figure}[h!]
 		\centering
 	
 		\begin{tikzpicture}[scale=0.7]
@@ -580,25 +580,83 @@
 					markings,
 					mark=between positions 0.1 and 0.9 step 12mm with {\arrow[orange]{stealth};}
 				}
-			}] ({2.0*\wth}, 4) -| (8, {2.5*\wth}) node[pos=0.15, orange, above left] {$\lambda$ not large} node[pos=0.9, orange, above, rotate=-90] {$\lambda$ small};
+			}] ({2.0*\wth}, 4) -| (8, {2.5*\wth}) node[pos=0.15, orange, above left] {$\lambda$ not large} node[pos=0.9, orange, above, rotate=-90] {$\lambda$ large};
 			\draw[] (-\wth, 4) -- (\wth, 4) node[pos=0, left] {$\log \left\|\bar{\textbf{x}}\right\|$};
 			\draw[] (8,-\wth) -- (8,\wth) node[pos=0, below] {$\log \left\|\bar{\textbf{b}}\right\|$};
 			
-			\draw[magenta, dashed, thick, variable=\t, domain=-3.5:6.12,,postaction={decorate,decoration={markings,mark=between positions 0.1 and 0.8 step 10mm with {\arrow[magenta]{stealth};}}},
+			\draw[magenta, dashed, thick, variable=\t,samples=100, domain=-4.7:5.8,postaction={decorate,decoration={markings,mark=between positions 0.1 and 0.8 step 10mm with {\arrow[magenta]{stealth};}}},
 				]
-				 plot ({3.1+ln(1+exp(\t)/2)}, {4.2+ln(1+exp(-\t)-12*exp(\t-8.7))}) ;
-			\node[draw, circle, fill, cyan, inner sep = 1.5pt] (Lopt) at ({3.1+ln(1+exp(0)/2)}, {4.2+ln(1+exp(-0)-2*exp(0-7))}){};
+				 plot ({3.1+ln(1+exp(\t)/2)}, {4.2+0.25*ln(1+exp(-\t*2))-3.9/ln(2)*ln(1+exp((\t-5.8))^7)}) ;
+			\node[draw, circle, fill, cyan, inner sep = 1.5pt] (Lopt) at ({3.1+ln(1+exp(-0.5)/2)},
+			 {4.2+0.25*ln(1+exp(0.5*2))-3.9/ln(2)*ln(1+exp((-0.5-5.8))^7)}){};
 			\draw[<-, cyan] (Lopt) -- +(2,1.5) node[pos=1, above right] {ideal $\lambda$};
 		\end{tikzpicture}
-		\caption{L-curve theory. $m $ is the number of nonzero singular values of the matrix $A$. The errors associated to $\textbf{e}$ are in {\color{red}red}, while those linked to $\bar{\textbf{b}}$ are in {\color{green}green}. The overall behaviour belonging to $\bar{\textbf{x}}_\lambda$ is shown in {\color{magenta}magenta}.}\label{fig:Lcurve-theory}
+		\caption{L-curve theory. $m $ is the number of nonzero singular values of the matrix $A$. The errors associated to $\textbf{e}$ are in {\color{red}red}, while those linked to $\bar{\textbf{b}}$ are in {\color{green}green}. The overall behaviour belonging to $\bar{\textbf{x}}_\lambda$ is shown in {\color{magenta}magenta}} (this is the titular L curve).\label{fig:Lcurve-theory}
 	\end{figure}
 	
+	The maximum curvature point is found automatically with the help of \textcite{Kroon_2011}.
+	\FloatBarrier
+	\subsection{Generalized cross-validation}
+	GCV is based on the philosophy that if an arbitrary element $\mbf{b}_i$ of the right-hand side $\mbf{b}$ is left out, then the corresponding regularized solution should predict this observation well, and the choice of
+	regularization parameter should be independent of an orthogonal transformation of $\mbf{b}$. This (through some complex theory that we need not worry about) leads to choosing the regularization parameter, which minimizes the GCV function
+	$$G =\frac{\|A\mbf{x}_{\text{REG}} - \mbf{b}\|_2^2}{(\text{trace}(I_m - AA^I ))^2}$$
+	where $A^I$ is a matrix which produces the regularized solution $\mbf{x}_{REG}$ when multiplied with $\mbf{b}$, i.e.
+	$\mbf{x}_{\text{REG}} = A^I \mbf{b}$. For instance, in the case of Tikhonov regularization (with $L = I_m$ ) we have that
+	$A^I = V F \Sigma^{-1}U^T$ (you can easily check this) when $A = U \Sigma V^T$ is the singular value decomposition of $A$ and $F$ is the corresponding diagonal matrix of filter factors at the parameter $\lambda$. Note that G
+	is defined for both continuous and discrete regularization parameters. \textbf{Show the following, more general statement:}
+	\begin{lemma}
+		We have that $\text{trace}(I_m - AA^I ) = m - (n -p) - \sum_{i=1}^p f_i$
+	\end{lemma}
+	\begin{proof}
+		The decomposition for $A$ and $A^I$ can be substituted into 
+		\begin{equation}
+			\text{trace}(I_m - AA^I ) = \text{trace}(I_m - U \Sigma V^T A^I V F \Sigma^{-1}U^T ) = \text{trace}(I_m - U \Sigma  F \Sigma^{-1}U^T ) = \text{trace}(I_m) - \text{trace}(F)
+		\end{equation}
+		where we used the orthogonality of $V, U$. $A\in\mathbb{R}^{m\times n}$ ($\textbf{x}$ is $n$, and $\textbf{b}$ is $m$ dimensional) and $B \in p \times n$. Due to \autoref{eq:tik-gsvd-sol} shows that $F$ must have $n-p$ $1$'s on its diagonal and the rest must be filled with 1's. Therefore the formula in the lemma is justified.
+		\pdfmargincomment[author=Andras]{The dimensions might be a bit off here, maybe should be put in slighlty different form?}%
+	\end{proof}
+	 Note that for truncated algorithms the meaning of $p$ might become the number of approximating singular values used for instance. 
+	 
+	 For the conjugate gradient method because we are solving the normal equation $m=n$. $p$ will denote the number of iterations (the dimension of the Krylov subspace).
+	 
+	 
+	%\textbf{What are $n$ and $p$ for CG? Assume $x_0=0$ and $A^TA$ positive definite.}
 	
 	
-	\newpage
+	\section{Application: the watchmaker and the bowl of soup}
+	In this section we introduce a slightly silly application of the regularization methods described.
+	\subsection{Context}
+	Imagine you are a watchmaker, specializing in wristwatches. As such you have very sensitive hands and fingertips. In addition, you cannot allow them to be burned. Today, your partner has made you a bowl of soup, heated in the microwave and set it down at your workbench. You notice that the bowl is ceramic, which means it is probably very hot. Contrary, you deduce from the lack of steam that the soup is room temperature. Unfortunately, there is no cloth around that is thick enough to protect your hands from the scorching ceramic over the long trip back to the microwave. Fortunately though, you are skilled in integral equations and you can tell temperatures using your fingers with an accuracy of about $1e-3$ degrees. And so you put your finger in the soup, close to the bowl, but not touching, and measure the temperature as a function of time. You use this to determine the temperature of the bowl by solving \emph{the inverse heat equation.}
+	\subsection{The inverse heat equation}
+	We model this as the inverse of the following heat equation:
+	\begin{align*}
+		\frac{\partial}{\partial t}T\,\,\,&=\frac{\partial^2}{\partial^2x}T\\
+		T(x,0)&=\,\,0\\
+		T(0,t)&=f(t)
+	\end{align*}
+	for $0<x<\infty$ and $0\leq t<\infty$.
+	Here, the temperature $T = 0$ actually corresponds to room temperature, that is $20$ degrees Celsius. The origin ($x=0$) corresponds to the bowl. The variable $t$ in our example is measured in minutes. By inverse we mean: while the above calculates $T$ given the boundary condition $f$ , we wish to compute $f$ from the observed $T(y, t) := g(t)$ at a distance y from the origin. It is known that this is given by
+	$$Kf=g$$
+	with
+	$$(Kf)(t)=\frac{y}{2\sqrt{\pi}}\int_0^t\frac{f(\xi)}{(t-\xi)^{3/2}}\exp(\frac{-y^2}{4(t-\xi)})\,d\xi.$$
+	This is a Volterra integral equation, but can be transformed into a Fredholm equation by extension. It is thus immediately suspect: the discretization of this problem is probably ill-posed.
+	\subsection{Provided data}
+	You have been provided a matrix $K$, obtained by the mid-point rule discretization of the operator
+	$K$. In addition you are given an exact solution $f$ and a perturbed (random normally distributed noise, $\sigma = 1e-3$) right-hand-side $\mathbf{g}$. Both are given over a time range of
+	$10$ minutes.
+	\subsection{Extra information about the solution}
+	Since regularization is all about using information about the solution, some information is provided that could be used . You can verify this by looking at the exact solution given. %\textbf{Not every piece of information needs to be used, or might even be helpful!}
+	\begin{itemize}
+		\item[(1)] The solution is not oscillatory. This can be achieved by requiring that its second derivative is
+		small
+		\item[(2)] The solution is eventually zero. In fact, if $t > 5$, $f$ is negligible
+		\item[(3)]The temperature is always positive i.e. $f > 0$
+		\item[(4)]Initially, the temperature is stationary, that is, $g'(0) = 0$
+	\end{itemize}
 	
-
+	\subsection{Solution}
+	The condition number of the matrix $A$ (\texttt{K} variable in MATLAB) is indeed quite unfavourable, calculated to be \texttt{4.9151e+124}. 
 \FloatBarrier
-\newpage
+\pagebreak
 \printbibliography
 \end{document}
