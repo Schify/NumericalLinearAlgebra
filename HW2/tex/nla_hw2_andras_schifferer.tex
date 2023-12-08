@@ -556,7 +556,7 @@
 	\begin{equation}
 		\mathbb{E}\left[\textbf{u}_i^T \textbf{e}\right] = \varepsilon.
 	\end{equation} 
-	If we denote the solution to the exact regularized problem by $\bar{\textbf{b}}_\lambda$, then we can track the contribution of  $\bar{\textbf{b}}_\lambda$ and the solution contribution from the error ($\textbf{x}_\lambda^{e}$) to the magnitude of the perturbed solution and the residue of the perturbed equation. This behaviour is shown in \autoref{fig:Lcurve-theory}, the so called L-curve is the sum of these two contributions. Ideally we would want $\left\| {\textbf{x}} \right\|$ as close to $\left\| \bar{\textbf{x}} \right\|$ as possible, while keeping the residue $\left\|A\bar{\textbf{x}}_\lambda - \bar{\textbf{b}}\right\|$ to a minimum. Therefore the ideal choice intuitively lies in the corner of the L-curve
+	If we denote the solution to the exact regularized problem by $\bar{\textbf{b}}_\lambda$, then we can track the contribution of  $\bar{\textbf{b}}_\lambda$ and the solution contribution from the error ($\textbf{x}_\lambda^{e}$) to the magnitude of the perturbed solution and the residue of the perturbed equation. This behaviour is shown in \autoref{fig:Lcurve-theory}, the so called L-curve is the sum of these two contributions. Ideally we would want $\left\| {\textbf{x}} \right\|$ as close to $\left\| \bar{\textbf{x}} \right\|$ as possible, while keeping the residue $\left\|A\bar{\textbf{x}}_\lambda - \bar{\textbf{b}}\right\|$ to a minimum. Therefore the ideal choice intuitively lies in the corner of the L-curve. Usually this point is calculated based on curvature automatically.
 	\begin{figure}
 		\centering
 	
@@ -584,14 +584,17 @@
 			\draw[] (-\wth, 4) -- (\wth, 4) node[pos=0, left] {$\log \left\|\bar{\textbf{x}}\right\|$};
 			\draw[] (8,-\wth) -- (8,\wth) node[pos=0, below] {$\log \left\|\bar{\textbf{b}}\right\|$};
 			
-			\draw[magenta, dashed, thick, variable=\t, domain=-3.5:6,,postaction={decorate,decoration={markings,mark=between positions 0.1 and 0.8 step 10mm with {\arrow[magenta]{stealth};}}},
+			\draw[magenta, dashed, thick, variable=\t, domain=-3.5:6.12,,postaction={decorate,decoration={markings,mark=between positions 0.1 and 0.8 step 10mm with {\arrow[magenta]{stealth};}}},
 				]
-				 plot ({3.1+ln(1+exp(\t)/2)}, {4.2+ln(1+exp(-\t)-2*exp(\t-7))}) ;
+				 plot ({3.1+ln(1+exp(\t)/2)}, {4.2+ln(1+exp(-\t)-12*exp(\t-8.7))}) ;
 			\node[draw, circle, fill, cyan, inner sep = 1.5pt] (Lopt) at ({3.1+ln(1+exp(0)/2)}, {4.2+ln(1+exp(-0)-2*exp(0-7))}){};
 			\draw[<-, cyan] (Lopt) -- +(2,1.5) node[pos=1, above right] {ideal $\lambda$};
 		\end{tikzpicture}
-		\caption{L-curve theory. $m $ is the number of nonzero singular values of the matrix $A$. The errors associated to $\textbf{e}$ are in {\color{red}red}, while those linked to $\bar{\textbf{b}}$ are in {\color{green}green}. The overall behaviour belonging to $\bar{\textbf{x}}_\lambda$ is shown in {\color{magenta}magenta} }\label{fig:Lcurve-theory}
+		\caption{L-curve theory. $m $ is the number of nonzero singular values of the matrix $A$. The errors associated to $\textbf{e}$ are in {\color{red}red}, while those linked to $\bar{\textbf{b}}$ are in {\color{green}green}. The overall behaviour belonging to $\bar{\textbf{x}}_\lambda$ is shown in {\color{magenta}magenta}.}\label{fig:Lcurve-theory}
 	\end{figure}
+	
+	
+	
 	\newpage
 	
 
