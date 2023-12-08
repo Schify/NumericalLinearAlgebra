@@ -9,15 +9,15 @@ n = size(K, 2);
 m = size(K, 1);
 
 %[U, s, V] = csvd(K);
-p1 = Problem(K, g, 'cgls', "Tikhonov simple", [], ...
-    1:200)%logspace(-12, 2, 300));%, U, s, V);
+p1 = Problem(K, g, 'cgls', "GLS", [], ...
+    1:150)%logspace(-12, 2, 300));%, U, s, V);
 p1 = gen_data(p1);
 
 %L = eye(m, n);
 L = get_l(n, 2);
 %[Ug, sm, Xg, Vg] = cgsvd(K, L);
-p2 = Problem(K, g, 'tsvd', "Tikhonov advanced", L, ...
-    1:200)%logspace(-12, 2, 300));%, Ug, sm, Vg, Xg);
+p2 = Problem(K, g, 'dsvd', "Tikhonov advanced", L, ...
+    logspace(-12, 2, 300));%, Ug, sm, Vg, Xg);
 p2 = gen_data(p2);
 
 fig = figure;

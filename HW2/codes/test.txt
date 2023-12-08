@@ -1,0 +1,5 @@
+Name & Method & Parameter Name & $L$ & $p$ & $i^*_{\mathrm{L curve}}$ & $i^*_{\mathrm{GCV}}$ & $\left\|\mathbf{x}^* - \mathbf{x}_{\mathrm{L curve}}\right\|$ & $\left\|\mathbf{x}^* - \mathbf{x}_{\mathrm{GCV}}\right\|$ \\
+\hline
+
+GLS & \texttt{cgls} & $k$ & $I$ & 500 & 24 & 150 & 2.104392e+02& 2.139213e+02\\\hline
+Tikhonov advanced & \texttt{dsvd} & $\lambda$ & $I$ & 498 & 242 & 213 & 2.101297e+02& 2.118618e+02\\\hline

@@ -59,6 +59,9 @@
 \graphicspath{{../figs/}}
 \newcommand{\figurescale}{1.0}
 
+\newcommand\minput[1]{%
+	\input{#1}%
+	\ifhmode\ifnum\lastnodetype=11 \unskip\fi\fi}
 %\usepackage{titlesec}
 %\titleformat{\subsection}{\normalfont\large\bfseries}{Task \thesubsection}{1em}{}
 %\titleformat{\section}{\normalfont\Large\bfseries}{Assignment \thesection}{1em}{}
@@ -656,6 +659,12 @@
 	
 	\subsection{Solution}
 	The condition number of the matrix $A$ (\texttt{K} variable in MATLAB) is indeed quite unfavourable, calculated to be \texttt{4.9151e+124}. 
+	\begin{table}
+		\begin{tabular}{|c||c|c|c|c|c|c|c|c|}
+			\minput{../codes/test.txt}
+		\end{tabular}
+	\end{table}
+	
 \FloatBarrier
 \pagebreak
 \printbibliography

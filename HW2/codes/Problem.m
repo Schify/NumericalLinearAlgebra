@@ -17,6 +17,7 @@ classdef Problem
         sm
         V
         L = []
+        Lname = "I"
         X = []
 
         Xs
@@ -30,8 +31,12 @@ classdef Problem
     end
     
     methods
+
         function obj = Problem(A, b, method,name,L, pars, U, s, V, X)
             %constructor
+            if nargin == 0
+                return
+            end
             obj.method = method; obj.name = name;
             obj.A = A;
             obj.b = b;
@@ -111,10 +116,15 @@ classdef Problem
             obj.eta = eta; %#ok<PROP> 
             obj.F = F; %#ok<PROP> 
             % L curve
-            [obj.ind_best_L,~] = find_largest_curvature(obj.rho,obj.eta, obj.pars);
+            if strcmp(obj.parname, "k")
+                [obj.ind_best_L,~] = find_largest_curvature(obj.rho,obj.eta, obj.pars);
+            else
+                [obj.ind_best_L,~] = find_largest_curvature(log(obj.rho),log(obj.eta), obj.pars);
+            end
             % GCV
             if strcmp(obj.method, 'cgls')
-                obj.gcv_vals = obj.rho.^2./(obj.m-obj.n+obj.p-sum(obj.F)').^2;
+                p = obj.pars;
+                obj.gcv_vals = obj.rho.^2./(obj.m-obj.n+p'-sum(obj.F)').^2;
             else
                 if isempty(obj.L)%difference between general and nongeneral
                     [~,G,~] = gcv_mod(obj.U,obj.s,obj.b, obj.pars, obj.method);
