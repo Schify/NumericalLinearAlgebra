@@ -9,7 +9,7 @@ n = size(K, 2);
 m = size(K, 1);
 
 %[U, s, V] = csvd(K);
-p1 = Problem(K, g, 'tsvd', "Tikhonov simple", [], ...
+p1 = Problem(K, g, 'cgls', "Tikhonov simple", [], ...
     1:200)%logspace(-12, 2, 300));%, U, s, V);
 p1 = gen_data(p1);
 

@@ -71,6 +71,14 @@ classdef Problem
             if strcmp(obj.method, 'dsvd')
                 obj.func = @dsvd;
             end
+            if strcmp(obj.method, 'cgls')
+                if ~isempty(L)
+                    error("There cannot be an L with GLS")
+                end
+                obj.parname = "k";%discreete parameter
+                obj.pars = 1:max(obj.pars); 
+                obj.func = @cgls;
+            end
         end
 
         function obj=gen_data(obj)
@@ -79,14 +87,16 @@ classdef Problem
             obj.rho = zeros(npars,1);
             obj.Xs = zeros(obj.n,npars);
             %% Solutions
-            if strcmp(obj.method, 'Tikh') || strcmp(obj.method, 'tsvd') || strcmp(obj.method, 'dsvd')
+            if strcmp(obj.method, 'Tikh') || strcmp(obj.method, 'tikh') || strcmp(obj.method, 'tsvd') || strcmp(obj.method, 'dsvd')
                 if isempty(obj.L)%difference between general and nongeneral
                     [x_lambda, rho, eta] = obj.func(obj.U, obj.s, obj.V, obj.b, obj.pars); %#ok<PROP> 
                 else
                     [x_lambda, rho, eta] = obj.func(obj.U, obj.sm, obj.X, obj.b, obj.pars); %#ok<PROP> 
                 end
             end
-
+            if strcmp(obj.method, 'cgls')
+                [x_lambda, rho, eta, F] = cgls(obj.A, obj.b, max(obj.pars), 0, obj.s); %#ok<PROP> 
+            end
             %% Filter factors
             if strcmp(obj.method, 'Tikh') || strcmp(obj.method, 'tsvd') || strcmp(obj.method, 'dsvd')
                 if isempty(obj.L)
@@ -103,14 +113,17 @@ classdef Problem
             % L curve
             [obj.ind_best_L,~] = find_largest_curvature(obj.rho,obj.eta, obj.pars);
             % GCV
-            obj.gcv_vals = obj.rho.^2./(obj.m-obj.n+obj.p-sum(obj.F)').^2;
-            if isempty(obj.L)%difference between general and nongeneral
-                [~,G,~] = gcv_mod(obj.U,obj.s,obj.b, obj.pars, obj.method);
+            if strcmp(obj.method, 'cgls')
+                obj.gcv_vals = obj.rho.^2./(obj.m-obj.n+obj.p-sum(obj.F)').^2;
             else
-                [~,G,~] = gcv_mod(obj.U,obj.sm,obj.b, obj.pars, obj.method);
+                if isempty(obj.L)%difference between general and nongeneral
+                    [~,G,~] = gcv_mod(obj.U,obj.s,obj.b, obj.pars, obj.method);
+                else
+                    [~,G,~] = gcv_mod(obj.U,obj.sm,obj.b, obj.pars, obj.method);
+                end
+                close(gcf);
+                obj.gcv_vals = G;
             end
-            close(gcf);
-            obj.gcv_vals = G;
             [~, obj.ind_best_gcv] = min(obj.gcv_vals);
 
         end
@@ -124,9 +137,13 @@ classdef Problem
             fig;
 
             grid on 
-            set(ax, "XScale", "log")
             set(ax, "YScale", "log")
-            curve=plot(ax, obj.rho, obj.eta, "--");
+            set(ax, "XScale", "log")
+            mark_style = "--";
+            if strcmp(obj.parname, "k")
+                mark_style = "*";
+            end
+            curve=plot(ax, obj.rho, obj.eta, mark_style);
             best_ind = obj.ind_best_L; best_lambda = obj.pars(best_ind);
             best_text = sprintf("$%s = %g$",obj.parname, best_lambda);
             best_point = scatter(ax, obj.rho(best_ind), obj.eta(best_ind),100, "X");
@@ -163,7 +180,11 @@ classdef Problem
             grid on 
             set(ax, "XScale", "log")
             set(ax, "YScale", "log")
-            curve=plot(ax, obj.pars, obj.gcv_vals, "--");
+            mark_style = "--";
+            if strcmp(obj.parname, "k")
+                mark_style = "*";
+            end
+            curve=plot(ax, obj.pars, obj.gcv_vals, mark_style);
             best_ind = obj.ind_best_gcv; best_lambda = obj.pars(best_ind);
             best_text = sprintf("$%s = %g$",obj.parname, best_lambda);
             best_point = scatter(ax, obj.pars(best_ind), obj.gcv_vals(best_ind),100, "X");
