@@ -219,13 +219,15 @@ classdef Problem
 
         end
 
-        function plot_best_sol(obj,ts,type_of_sol, fig, ax)
+        function plot_best_sol(obj,ts,type_of_sol, fig, ax, exact)
             
             fig;
 
             grid on 
 %             set(ax, "XScale", "log")
-%             set(ax, "YScale", "log")
+            if nargin > 5%error plotting
+                set(ax, "YScale", "log")
+            end
             
             if strcmp(type_of_sol, 'GCV') || type_of_sol == 2
                 best_ind = obj.ind_best_gcv;
@@ -234,18 +236,32 @@ classdef Problem
                 best_ind = obj.ind_best_L;
                 best_type="L curve";
             end
-            curve=plot(ax, ts, obj.Xs(:, best_ind));
+            if nargin<6
+                curve=plot(ax, ts, obj.Xs(:, best_ind));
+            else
+                curve=plot(ax, ts, abs(exact-obj.Xs(:, best_ind)));
+            end
 
             best_lambda = obj.pars(best_ind);
             best_text = sprintf("%s (%s)",obj.name, best_type);
-            
-            xlabel("$t$","Interpreter","latex")
-            ylabel("$x(t)$","Interpreter","latex")
-            
-            
-            title("Solution");
             set(curve, "DisplayName", best_text);
-            legend("Interpreter","latex")
+            xlabel("$t$","Interpreter","latex")
+            if nargin<6
+                ylabel("$x(t)$","Interpreter","latex")
+                title("Solution");
+
+                legend("Interpreter","latex")
+            else
+                ylabel("$\left|x(t)-x^*(t)\right|$","Interpreter","latex")
+                title("Error");
+
+                legend("Interpreter","latex",'Location', 'southwest')
+            end
+            
+            
+            
+            
+            
             
 
 

@@ -38,7 +38,7 @@
 \usepgfplotslibrary{groupplots}
 \usepgfplotslibrary{colormaps}
 \usetikzlibrary{decorations.markings,decorations.pathreplacing,patterns,patterns.meta,pgfplots.fillbetween}
-
+\usetikzlibrary{plotmarks}
 \usepackage[ruled,vlined,linesnumbered,algo2e]{algorithm2e}
 \usepackage{wrapfig}
 \usepackage{subcaption}
@@ -292,7 +292,7 @@
 		\begin{bmatrix}
 			\Sigma&\\&I_{n-p}
 		\end{bmatrix}
-	\end{equation*}.\pdfmargincomment[author=András]{I am not sure whether this is matrix he meant}
+	\end{equation*}.%\pdfmargincomment[author=András]{I am not sure whether this is matrix he meant}
 	
 	A different way to treat the ill-conditioning of A is to derive a new problem with a well-conditioned rank deficient coefficient matrix (well-conditioned meaning that the nonzero singular values span a limited range). A fundamental result about rank deficient matrices is the Eckart-Young theorem. It states that the closest rank-$k$ approximation $A_k$ to $A$ (measured in 2-norm) is obtained
 	by truncating the SVD expansion at $k$, i.e., $A_k$ is given by
@@ -445,7 +445,7 @@
 	\begin{equation}
 		\left\langle \textbf{d}_{i-1}, \textbf{r}_i^{LS}\right\rangle = \beta_{i-1}\left\langle \textbf{d}_{i-2}, \textbf{r}_{i-1}^{LS}\right\rangle = \beta_{i-1}\beta_{i-2}\left\langle \textbf{d}_{i-3}, \textbf{r}_{i-2}^{LS}\right\rangle = \dots \left(\prod_{j=1}^{i-1}\beta_j\right) \left\langle \textbf{d}_{0}, \textbf{r}_{1}^{LS}\right\rangle = 0,
 	\end{equation}
-	where we could use $\left\langle \textbf{d}_0, \textbf{r}_1^{LS}\right\rangle = 0$, to prove that $\textbf{d}_{i-1} \perp \textbf{r}_i^{LS}$. \pdfmargincomment[author=Andras]{It can probably be proved, that $\textbf{r}_i^{LS}$ is perpendicular to all previous $\textbf{r}_j^{LS}$ and $\textbf{d}_j$}%
+	where we could use $\left\langle \textbf{d}_0, \textbf{r}_1^{LS}\right\rangle = 0$, to prove that $\textbf{d}_{i-1} \perp \textbf{r}_i^{LS}$. %\pdfmargincomment[author=Andras]{It can probably be proved, that $\textbf{r}_i^{LS}$ is perpendicular to all previous $\textbf{r}_j^{LS}$ and $\textbf{d}_j$}%
 	
 	
 	
@@ -520,7 +520,7 @@
 		\begin{equation}
 				Q_k^{\ast}A^{T} A Q_k \textbf{z} = \lambda \textbf{z}
 		\end{equation}
-		and thereby $\lambda$ is an zero of the Ritz polynomial and also of $R_k$. Since this is true for any eigenvalue\footnote{For simplicity we assumed unique eigenvalues.},\pdfmargincomment[author=Andras]{Multiplicities be damned. Probably it follows from something trivial though}
+		and thereby $\lambda$ is an zero of the Ritz polynomial and also of $R_k$. Since this is true for any eigenvalue\footnote{For simplicity we assumed unique eigenvalues.},%\pdfmargincomment[author=Andras]{Multiplicities be damned. Probably it follows from something trivial though}
 		 and we know that the constant coefficient of $R_k$ must be $1$ due to \autoref{lemma:poly-ei}, after normalizing the Ritz polynomial based on the Viete formulas (or just basic algebra), we arrive at the final form of $R_k$ as 
 		\begin{equation}
 			R_k(t)=\prod_{j=1}^{k}\frac{\theta_j^{(k)}-t}{\theta_j^{(k)}},
@@ -544,7 +544,7 @@
 	where the filter coefficient is indeed $f_i = 1-R_k (\sigma_i^2)$.
 	
 	This filter parameter will be close to $1$ if $\sigma_i^2$ is near one of the Ritz values of $A^T A$ (which are aproximating the $\sigma_i^2$). For large (compared to the spectrum of the singular values) values of $\sigma_i^2$ it will be nonzero, but for smaller $\sigma_i^2$ since the non-constant coefficients will be relatively small, $f_i$ will be close to 0.
-	\pdfmargincomment[author=Andras]{This seems to be a good enough explanation, but leaves something to be desired.}
+	%\pdfmargincomment[author=Andras]{This seems to be a good enough explanation, but leaves something to be desired.}
 	
 	For this method the parameter that we can choose is not $\lambda$ but evidently $k$, so the dimension of the projection subspace.
 	
@@ -616,7 +616,7 @@
 			\text{trace}(I_m - AA^I ) = \text{trace}(I_m - U \Sigma V^T A^I V F \Sigma^{-1}U^T ) = \text{trace}(I_m - U \Sigma  F \Sigma^{-1}U^T ) = \text{trace}(I_m) - \text{trace}(F)
 		\end{equation}
 		where we used the orthogonality of $V, U$. $A\in\mathbb{R}^{m\times n}$ ($\textbf{x}$ is $n$, and $\textbf{b}$ is $m$ dimensional) and $B \in p \times n$. Due to \autoref{eq:tik-gsvd-sol} shows that $F$ must have $n-p$ $1$'s on its diagonal and the rest must be filled with 1's. Therefore the formula in the lemma is justified.
-		\pdfmargincomment[author=Andras]{The dimensions might be a bit off here, maybe should be put in slighlty different form?}%
+		%\pdfmargincomment[author=Andras]{The dimensions might be a bit off here, maybe should be put in slighlty different form?}%
 	\end{proof}
 	 Note that for truncated algorithms the meaning of $p$ might become the number of approximating singular values used for instance. 
 	 
@@ -658,13 +658,95 @@
 	\end{itemize}
 	
 	\subsection{Solution}
-	The condition number of the matrix $A$ (\texttt{K} variable in MATLAB) is indeed quite unfavourable, calculated to be \texttt{4.9151e+124}. 
+	The condition number of the matrix $A$ (\texttt{K} variable in MATLAB) is indeed quite unfavourable, calculated to be \texttt{4.9151e+124}. All of the experiments have been collected into \autoref{table:trials}.
 	\begin{table}
+		\centering
 		\begin{tabular}{|c||c|c|c|c|c|c|c|c|}
-			\minput{../codes/test.txt}
-		\end{tabular}
+			\minput{../plots/trials.txt}\end{tabular}
+		\caption{Trial information}\label{table:trials}
 	\end{table}
+	Some notation for the following sections:
+	\begin{itemize}
+		\item The finite difference condition imposing matrix will be denoted as $D_d$, where $d$ is the order of the difference.
+		\item $I_{t>5s}$ is a diagonal matrix that for the nodes corresponding to $t>5s$ we will increase the coefficients by some factor, while the rest of the diagonal elements will be 1.
+		\item Two conditions for $L$ can be combined, i.e. stacked. If the two previous matrixes have been $L_1$ and $L_2$, then the combination will be denoted with $L_1, L_2$.
+	\end{itemize}
 	
+	\subsection{Tikhonov solutions}
+	
+	The numerical results for Thikonov regulariation can be seen in \autoref{fig:tikh-sols}, with the errors on \autoref{fig:tikh-errs} and the curves used to choose the parameters in \autoref{fig:tikh-curves}. Here we have compared the regular Tikhinov with three more advanced penalization methods. The first one penalizes the second derivative, the second one forces the values after $t>5s$ towards zero, and the third one combines these two. Without the differential constraints the solution wiggles too much in the last part of the timeframe. However unfortunately at $t=10$ the differentially contrained solution fails to converge to $0$, therefore the combination of these two seems to have some advantage over both, with minimal oscillation but good boundary behaviour too.
+	\begin{figure}[h!]
+		\centering
+		\resizebox{0.95\textwidth}{!}{\input{../plots/tikh_sols_plot.tex}}
+		\caption{Solutions obtained using different Tikhonov methods, plotted against the exact solution.}\label{fig:tikh-sols}
+	\end{figure}
+	\begin{figure}[h!]
+	\centering
+	\resizebox{0.95\textwidth}{!}{\input{../plots/tikh_error_plot.tex}}
+	\caption{The error in the solutions compared to the exact solution of the problem for different Tikhonov methods}\label{fig:tikh-errs}
+	\end{figure}
+	\begin{figure}[h!]
+	\centering
+	\resizebox{0.95\textwidth}{!}{\input{../plots/tikh_curves_plot.tex}}
+	\caption{The L and GCV curves used to select the best parameters. The choice is indicated by a single cross after the curve in the legend.}\label{fig:tikh-curves}
+	\end{figure}
+	
+	\subsection{TSVD/TGSVD/DSVD/DGSVD solutions}
+	\begin{figure}[h!]
+		\centering
+		\resizebox{0.95\textwidth}{!}{\input{../plots/tsvd_sols_plot.tex}}
+		\caption{Solutions obtained using different T(G)SVD methods, plotted against the exact solution.}\label{fig:tsvd-sols}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering
+		\resizebox{0.95\textwidth}{!}{\input{../plots/tsvd_error_plot.tex}}
+		\caption{The error in the solutions compared to the exact solution of the problem for different T(G)SVD methods}\label{fig:tsvd-errs}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering
+		\resizebox{0.95\textwidth}{!}{\input{../plots/tsvd_curves_plot.tex}}
+		\caption{The L and GCV curves used to select the best parameters. The choice is indicated by a single cross after the curve in the legend.}\label{fig:tsvd-curves}
+	\end{figure}
+	
+	
+	\begin{figure}[h!]
+	\centering
+	\resizebox{0.95\textwidth}{!}{\input{../plots/dsvd_sols_plot.tex}}
+	\caption{Solutions obtained using different D(G)SVD methods, plotted against the exact solution.}\label{fig:dsvd-sols}
+	\end{figure}
+	\begin{figure}[h!]
+	\centering
+	\resizebox{0.95\textwidth}{!}{\input{../plots/dsvd_error_plot.tex}}
+	\caption{The error in the solutions compared to the exact solution of the problem for different D(G)SVD methods}\label{fig:dsvd-errs}
+	\end{figure}
+	\begin{figure}[h!]
+	\centering
+	\resizebox{0.95\textwidth}{!}{\input{../plots/dsvd_curves_plot.tex}}
+	\caption{The L and GCV curves used to select the best parameters. The choice is indicated by a single cross after the curve in the legend.}\label{fig:dsvd-curves}
+	\end{figure}
+	
+	\subsection{Conjugate Gradient solution}
+	
+	\begin{figure}[h!]
+		\centering
+		\resizebox{0.95\textwidth}{!}{\input{../plots/cgls_sols_plot.tex}}
+		\caption{Solutions obtained using the Conjugate Gradient method, plotted against the exact solution.}\label{fig:cgls-sols}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering
+		\resizebox{0.95\textwidth}{!}{\input{../plots/cgls_error_plot.tex}}
+		\caption{The error in the solutions compared to the exact solution of the problem for different the Conjugate Gradient method}\label{fig:cgls-errs}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering
+		\resizebox{0.95\textwidth}{!}{\input{../plots/cgls_curves_plot.tex}}
+		\caption{The L and GCV curves used to select the best parameters. The choice is indicated by a single cross after the curve in the legend.}\label{fig:cgls-curves}
+	\end{figure}
+	
+	\subsection{Conclusion}
+	The best selection technique seems to be the GCV, because it consistently selects the best solutions.
+	
+	The conjugate gradient method converges slowly, so the best soltion seems to be the regularization using the combination of weighting and 2nd derivative penalization. DSVD seems inept, and TGSVD seems to be the best performant.
 \FloatBarrier
 \pagebreak
 \printbibliography
