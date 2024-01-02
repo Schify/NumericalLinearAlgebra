@@ -291,3 +291,5 @@ TSWLatexianTemp*
 */hw_old.tex
 */gitdiff.tex
 *.mat
+HW3/Systems/*/*
+!HW3/Systems/*/*.m

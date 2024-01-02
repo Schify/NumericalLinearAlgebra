@@ -1,0 +1,347 @@
+\documentclass{article}
+\usepackage[top=2cm, bottom=2cm, left=2.2cm, right=2.5cm]{geometry}
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{enumerate}% http://ctan.org/pkg/enumerate
+
+\usepackage[]{pdfcomment}
+%As recommended by matlab2tikz
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage{nicematrix}
+\usepackage{calc}
+\usepackage{pgfplotstable}
+\usepackage{booktabs}
+\usepackage{csvsimple}
+\usepackage{etoolbox}
+\usepackage[style=alphabetic]{biblatex}
+\usepackage{amsthm}
+\bibliography{refs.bib}
+%% the following commands are needed for some matlab2tikz features
+\usetikzlibrary{plotmarks}
+\usetikzlibrary{arrows.meta}
+\usepgfplotslibrary{patchplots}
+\usepackage{grffile}
+%% you may also want the following commands
+\pgfplotsset{plot coordinates/math parser=false}
+%\newlength\figureheight
+%\newlength\figurewidth
+\usepackage{hyperref}
+\usepackage{placeins,nicefrac}
+\usepackage{xstring}
+\usepackage[]{pgfkeys}
+\usepackage{xfrac}
+\usepackage{breqn}%dmath, might be problematic sometimes
+\usepackage[newfloat]{minted}
+\usetikzlibrary{external}
+\usetikzlibrary{calc,math}
+\tikzexternalize[prefix=extern/]
+\usepgfplotslibrary{groupplots}
+\usepgfplotslibrary{colormaps}
+\usetikzlibrary{decorations.markings,decorations.pathreplacing,patterns,patterns.meta,pgfplots.fillbetween}
+\usetikzlibrary{plotmarks}
+\usepackage[ruled,vlined,linesnumbered,algo2e]{algorithm2e}
+\usepackage{wrapfig}
+\usepackage{subcaption}
+\newenvironment{code}{\captionsetup{type=listing}}{}
+\SetupFloatingEnvironment{listing}{name=Source Code}
+\graphicspath{../plots/}
+
+\usepackage{wasysym}
+\usepackage{animate}
+\usepackage[symbol]{footmisc}
+
+%\usepackage{expl3}
+%\ExplSyntaxOn
+%\cs_set_eq:NN \fpeval \fp_eval:n
+%\ExplSyntaxOff
+
+\usetikzlibrary{fpu}
+\graphicspath{{../figs/}}
+\newcommand{\figurescale}{1.0}
+
+\newcommand\minput[1]{%
+	\input{#1}%
+	\ifhmode\ifnum\lastnodetype=11 \unskip\fi\fi}
+%\usepackage{titlesec}
+%\titleformat{\subsection}{\normalfont\large\bfseries}{Task \thesubsection}{1em}{}
+%\titleformat{\section}{\normalfont\Large\bfseries}{Assignment \thesection}{1em}{}
+%\titleformat{\subsubsection}{\normalfont\bfseries}{Question \thesubsubsection}{1em}{}
+\newcommand\mycommfont[1]{\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
+
+\newcommand{\stilltodo}[1]{{\color{red} UNFINISHED #1}}
+
+\makeatletter
+\newcommand{\trp}{%
+	{\mathpalette\@transpose{}}%
+}
+\newcommand*{\@transpose}[2]{%
+	% #1: math style
+	% #2: unused
+	\raisebox{\depth}{$\m@th#1\intercal$}%
+}
+
+\makeatother
+\newcommand{\diff}{\mathrm{d}}
+\newcommand{\mbf}[1]{\mathbf{#1}}
+\author{Andr\'as Schifferer, r0915705}
+\title{Numerical Linear Algebra [H03G1A]\\{\LARGE HW3}\\{\large Model Order Reduction}}
+\date{\today} 
+
+\pgfplotsset{plot coordinates/math parser=false}
+
+\makeatletter
+\providecommand{\leftsquigarrow}{%
+	\mathrel{\mathpalette\reflect@squig\relax}%
+}
+\newcommand{\reflect@squig}[2]{%
+	\reflectbox{$\m@th#1\rightsquigarrow$}%
+}
+\makeatother
+
+
+\newtheorem{lemma}{Lemma}
+\newcommand{\lemmaautorefname}{Lemma}
+\newtheorem{theorem}{Theorem}
+\DeclareMathOperator*{\argmin}{arg\,min} % thin space, limits underneath in displays
+\DeclareMathOperator*{\argmax}{arg\,max} % thin space, limits underneath in displays
+
+\begin{document}
+	\maketitle
+	%The assignment is not yet finished unfortunately.
+	\tableofcontents
+	
+	% %%%%%%%%%%%%%%%%%%%
+	\section{Theory}
+	% %%%%%%%%%%%%%%%%%%%
+	In this assignment we will be analyzing large linear systems arising from a variety of applications, and the ways in which we can reduce the complexity of such systems. This can be seen as reducing the order of the models involved hence \emph{Model Order Reduction}. In particular, we will look at three types of large state space models.
+	\subsection{Basic state space models}
+	Given a simple ODE
+	\begin{equation}\label{eq:eqFirstOrder}
+		\dot{\mathbf{x}}=A\mathbf{x}+\mathbf{b}\cdot u(t)
+	\end{equation}
+	with solution $\mathbf{q}(t)\in \mathbb{R}^n$, and some input $u(t)\in\mathbb{R}$ we can transform this using the Laplace transform and slightly abusing notation (recycling the variable $\mathbf{x}$) into
+	$$s\mathbf{x}-A\mathbf{x}=\mathbf{b}u.$$
+	We are not always interested in $\mathbf{x}$, but rather some functional applied to $\mathbf{x}$, which results in the state space model
+	\begin{equation}\label{eq:stateSpace}
+		\begin{aligned}
+			s\mathbf{x}-A\mathbf{x}&=\mathbf{b}u\\
+			y&=\mathbf{c}^T\mathbf{x}.
+		\end{aligned} 
+	\end{equation}
+	State space models of this kind will be referred to in this text as \emph{basic state space models}.
+	
+	
+	\subsection{State space models from mechanics}
+	Typical ODEs for mechanical systems take the form
+	\begin{equation}\label{eq:SecondOrder}
+		M\ddot{\mathbf{x}}+D\dot{\mathbf{x}}+K\mathbf{x}=\mathbf{b} \cdot u(t).
+	\end{equation}
+	Here $\mathbf{x}(t)\in\mathbb{R}^n$ and $\mathbf{b}\cdot u(t)\in\mathbb{R}^{n}$ are vectors varying over time (note the special structure of the time variation of the right hand side!). Typically, $\mathbf{x}$ is a vector of displacements of degrees-of-freedom (dofs) arising from a Finite Element Method (FEM) discretization of the original continuous problem. The vector $\mathbf{b} \cdot u(t)$ then typically corresponds to a force exerted on the structure and is called the \emph{input}. The matrices $M$, $D$ and $K$ are called the \emph{mass}-, \emph{damping}- and \emph{stiffness matrix} respectively.
+	
+	
+	%\textbf{Transform equation \ref{eq:SecondOrder} into an equivalent ODE of the form}
+	We can transform the 2nd order ODE into a 1st order one by introducing a new variable $\textbf{q} = \begin{bmatrix}
+		\textbf{x}^T & \dot{\textbf{x}}^T
+	\end{bmatrix}^T \in \mathbb{R}^{2n}$. Then we can write the \autoref{eq:SecondOrder} in a blocked form as 
+	\begin{equation}\label{eq:equivFirstOrder}
+		\dot{\mathbf{q}} = \begin{bmatrix}
+			\dot{\textbf{x}} \\\hline \ddot{\textbf{x}}
+		\end{bmatrix} =
+		\underbrace{\left[\begin{array}{@{}c|c@{}}
+		\textbf{0}_{n\times n} & \textbf{I} \\\hline -{M}^{-1} K & -{M}^{-1} D
+		\end{array}\right]}_{=A} 
+		\begin{bmatrix}
+			{\textbf{x}} \\\hline \dot{\textbf{x}}
+		\end{bmatrix}
+		 + \underbrace{\left[\begin{array}{@{}c@{}}
+		\textbf{0}_{n\times 1}  \\\hline {M}^{-1} \textbf{b}
+		\end{array}\right]}_{\textbf{f}} u(t)
+		= A\mathbf{q}+\mathbf{f}\cdot u(t)
+	\end{equation}
+	where we assumed that $\textbf{M}$ is invertible.
+%	\textbf{with $\mathbf{q}(t)\in\mathbb{R}^{2n}$. NOTE THE CHANGE IN DIMENSION. Use the most natural transformation. You can assume that $M$ is invertible.}
+		Again, using the Laplace transform and a slight abuse of notation we re-write equation this as
+	\begin{equation}\label{eq:LaplaceX}
+		s\mathbf{x}-A\mathbf{x}=\mathbf{b}u
+	\end{equation} 
+	Note that after the two transformations introduced before, these variable are linked, but not at all identical to their original counterparts.
+	
+	%\textbf{What if we generalize, and instead look for a Laplace domain system of the form}
+	We can be more general in our treatment if instead of assuming invertibility of $M$, we just have 
+	\begin{equation}\label{eq:equivFirstOrder-generalized}
+		E \dot{\mathbf{q}} = \underbrace{\left[\begin{array}{@{}c|c@{}}
+				\textbf{I} & \textbf{0}_{n\times n} \\\hline \textbf{0}_{n\times n} & M
+			\end{array}\right]}_{E} \begin{bmatrix}
+			\dot{\textbf{x}} \\\hline \ddot{\textbf{x}}
+		\end{bmatrix} =
+		\underbrace{\left[\begin{array}{@{}c|c@{}}
+				\textbf{0}_{n\times n} & \textbf{I} \\\hline - K & - D
+			\end{array}\right]}_{=A} 
+		\begin{bmatrix}
+			{\textbf{x}} \\\hline \dot{\textbf{x}}
+		\end{bmatrix}
+		+ \underbrace{\left[\begin{array}{@{}c@{}}
+				\textbf{0}_{n\times 1}  \\\hline  \textbf{b}
+			\end{array}\right]}_{\textbf{f}} u(t)
+		= A\mathbf{q}+\mathbf{f}\cdot u(t)
+	\end{equation}
+	which results in 
+		\begin{equation}\label{eq:LaplaceXE}
+			sE\mathbf{x}-A\mathbf{x}=\mathbf{b}u
+		\end{equation}
+		after Laplace transformation (with abuse of variable notation again). Since this does not require that $M$ be full rank, it is a slightly more general formulation, even though it can be more difficult to handle.
+%		\textbf{with $E\in\mathbb{R}^{2n}$ not necessarily the identity? What is then the most natural such formulation? What important advantage does it have? Show also that, under the corresponding assumptions, each of the above models is equivalent to the original model.}\\
+	Typically, we are not interested in all of $x$, but only in some (scalar) function $y$ of $\mathbf{x}$. This is written as
+	\begin{equation}\label{eq:stateSpace-again}
+		\begin{aligned}
+			s\mathbf{x}-A\mathbf{x}&=\mathbf{b}u\\
+			y&=\mathbf{c}^T\mathbf{x}.
+		\end{aligned} 
+	\end{equation}
+	\autoref{eq:stateSpace-again} is referred to as the \emph{state space} model of the mechanical system. %\textbf{Show that, under the assumptions made earlier about this model, it is equivalent to the model}
+	We can use our definitions in \autoref{eq:equivFirstOrder}, to substitute into \autoref{eq:stateSpace-again} the definition of $A$,$\textbf{x}=\textbf{q}$ and $\textbf{b}$. Then we get the following equation.
+	\begin{equation}
+		\begin{bmatrix}
+			s\textbf{x} \\\hline s^2 \textbf{x}
+		\end{bmatrix} - 
+		\underbrace{\left[\begin{array}{@{}c|c@{}}
+				\textbf{0}_{n\times n} & \textbf{I} \\\hline -{M}^{-1}K & -{M}^{-1} D
+			\end{array}\right]}_{=A} 
+		\begin{bmatrix}
+			{\textbf{x}} \\\hline s{\textbf{x}}
+		\end{bmatrix}
+		= \underbrace{\left[\begin{array}{@{}c@{}}
+				\textbf{0}_{n\times 1}  \\\hline {M}^{-1} \textbf{b}
+			\end{array}\right]}_{\textbf{f}=\textbf{b}} u
+	\end{equation}
+	which is esentially \autoref{eq:equivFirstOrder}'s Laplace transform. Taking the bottom half of the equation, multiplying with $M$ and rearranging one can then obtain
+		\begin{equation}\label{eq:Quadratic}
+			\begin{aligned}
+				s^2M\mathbf{x}+sD\mathbf{x}+K\mathbf{x}&=\mathbf{b}u\\
+				y&=\mathbf{c}^T\mathbf{x}.
+			\end{aligned} 
+		\end{equation}
+		{with $x\in\mathbf{R}^n$.} The output equation is unchanged due to the linearity of the Laplace transform. 
+		The model above is referred to as the \emph{quadratic model} of the mechanical system (it is the Laplace transform of \autoref{eq:SecondOrder}).\\
+		
+	The most important data associated to a state space model is the so-called \emph{transfer function} $H(s):=y(s)/u(s)$.
+%	\textbf{Interpret the meaning of the transfer function. Show that it can be written as}
+	This relates the input and the output of the system within the Laplace domain. In particular, it is the Laplace transform of the time zero impulse response of the system, where $u(t) = \delta(t) = \mathcal{L}^{-1}\left\{1\right\}$, with $\delta(t)$ being the Dirac delta function. Based on this one information, the response of the system can be calculated to any arbitrary input.
+	
+	We can form the transfer function from \autoref{eq:stateSpace-again} as 
+	\begin{equation}
+		H(s) = \frac{y(s)}{u(s)} = \frac{\textbf{c}^T \textbf{x}}{u(s)} = \frac{\textbf{c}^T \left(s I - A\right)^{-1}\textbf{b} u(s) }{u(s)} = \textbf{c}^T \left(s I - A\right)^{-1}\textbf{b}
+	\end{equation}
+	If we suppose that we can form the eigendecomposition of the state matrix as $A = P \Lambda P^{-1} = P \Lambda Q^\ast$, then this can be further understood as 
+	\begin{equation}\label{eq:transferFunction}
+		\begin{aligned}
+			H(s)&=\mathbf{c}^T(sI-A)^{-1}\mathbf{b} 
+			= \mathbf{c}^T(sP P ^{-1}-P \Lambda P^{-1})^{-1}\mathbf{b}
+			= \mathbf{c}^T\left(P \left(s I -\Lambda \right)P^{-1}\right)^{-1}\mathbf{b} 
+			= \mathbf{c}^T P \left(s I -\Lambda \right)^{-1}P^{-1}\mathbf{b}  \\
+			&
+			= \begin{bmatrix}
+				\textbf{c}^T \textbf{p}_1 & \textbf{c}^T \textbf{p}_2 & \dots & \textbf{c}^T \textbf{p}_n
+			\end{bmatrix}
+			\begin{bmatrix}
+				s - \lambda_1 & & & \\
+				& s - \lambda_2 & & \\
+				&& \ddots & \\
+				&&& s - \lambda_n
+			\end{bmatrix}^{-1}
+			\begin{bmatrix}
+				\textbf{q}_1^\ast \textbf{b} \\ \textbf{q}_2^\ast \textbf{b} \\ \vdots \\ \textbf{q}_n^\ast \textbf{b}
+			\end{bmatrix}
+			=\sum_{i=1}^n \frac{(\mathbf{c}^T\mathbf{p}_i)(\mathbf{q}_i^{\ast}\mathbf{b})}{s-\lambda_i}
+		\end{aligned} 
+	\end{equation}
+	following from the orthogonality of $\Lambda$. $\textbf{p}_i$ and $\textbf{q}_i$ are the columns of $P$ and $Q$ respectively.
+	It clearly shows that $H(s)$ is a rational function of degree $n$ (note that this $n$ is again a victim of notation abuse), with 
+	This is equivalent to the statement
+	 show that
+	\begin{equation}
+		(sI-A)^{-1}=\sum_{i=1}^{n}\frac{\mathbf{p}_i\mathbf{q}_i^{\ast}}{s-\lambda_i}.
+	\end{equation}
+	
+	he second form of equation \ref{eq:transferFunction} we will call the \emph{residual form} of the transfer function.
+	
+	%\textbf{What does $H$ look like in terms of the quadratic model? Describe the advantages of this formulation over the above (theoretical) descriptions.}
+	If we express $H(s)$ directly from \autoref{eq:Quadratic}, we get an alternative representation of the form:
+	\begin{equation}
+		H(s) = \frac{y(s)}{u(s)} = \frac{\textbf{c}^T \textbf{x}}{u(s)}
+		= \frac{\textbf{c}^T \left(M s^2 + D s + K\right)^{-1} \textbf{b}u(s)}{u(s)} = \textbf{c}^T \left(M s^2 + D s + K\right)^{-1} \textbf{b},
+	\end{equation}
+	where the inverse of only an $n \times n$ matrix is taken. This again does not rely on the inversion of the matrix $M$, so it is an alternative formulation to that described before.
+	
+	\subsection{State space models from simple ODEs}
+	Naturally we can consider any linear ODE to obtain a state space model i.e.
+	\begin{equation}\label{eq:simpleODE}
+		\begin{aligned}
+			E\dot{\mathbf{x}}(t)&=A\mathbf{x}(t)+\mathbf{b}\cdot u(t)\\
+			y(t)&=\mathbf{c}^{T}\mathbf{x}(t),
+		\end{aligned}
+	\end{equation}
+	with $\mathbf{x},\mathbf{b},\mathbf{c}\in\mathbb{R}^{n}$ and $E,A\in\mathbb{R}^{n\times n}$ leading by way of the Laplace transform to the model
+	\begin{equation}\label{eq:SSmodelfromSimpleODE}
+		\begin{aligned}
+			sE\mathbf{x}&=A\mathbf{x}+\mathbf{b}u\\
+			y&=\mathbf{c}^{T}\mathbf{x}.
+		\end{aligned}
+	\end{equation}
+	Note again the abuse in notation, and that in general $E$ is not the identity.
+	\textbf{ What does the transfer function look like now? Can it still be written in some residual form as in equation \ref{eq:transferFunction}? If so, under what assumptions? HINT: this requires looking into the generalized eigenvalue decomposition.}
+	Here, analogous to the previous derivation without $E$, the transfer function can be expressed as 
+	\begin{equation}
+		H(s) = \textbf{c}^T \left(sE - A\right)^{-1} \textbf{b}.
+	\end{equation}
+	If we assume, that $(A, E)$ have a generalized eigenvalue decomposition of the form $A = E P \Lambda P^{-1}$, then we can make the following transformations
+	\begin{equation}
+		\left(sE - A\right)^{-1} = \left(sEP P^{-1}-EP\Lambda P^{-1}\right)^{-1} = \left(EP\left(s I -\Lambda\right) P^{-1}\right)^{-1} = P \left(s I -\Lambda\right)^{-1} P^{-1} E^{-1}
+	\end{equation}
+	with $\Lambda$ being the diagonal vector of the generalized eigenvalues. If we denote $Q^\ast := P^{-1}E^{-1} $ similarly to before, then 
+	\begin{equation}
+		(sI-A)^{-1}=\sum_{i=1}^{n}\frac{\mathbf{p}_i\mathbf{q}_i^{\ast}}{s-\lambda_i}.
+	\end{equation}
+	and by extension
+	\begin{equation}
+		H(s)
+		=\sum_{i=1}^n \frac{(\mathbf{c}^T\mathbf{p}_i)(\mathbf{q}_i^{\ast}\mathbf{b})}{s-\lambda_i}
+	\end{equation}
+	will also hold in this case.
+	
+	% %%%%%%%%%%%%%%%%%%%
+	\section{Applications}
+	% %%%%%%%%%%%%%%%%%%%
+	In this section three applications are outlined. We have been given code \texttt{bode\_from\_system} and \texttt{bode\_from\_function} that can produce bode plots for transfer functions given in descriptor form or in the form of a transfer function definition, as well as a script that produces these plots for the relevant frequency ranges.
+	These tools have been used in the creation of the subsequent figures.
+	 %\textbf{Study the systems and these functions carefully.}
+	
+	\vspace{\baselineskip}
+	
+%	\textbf{All matrices and vectors have been provided in Matrix Market format or \texttt{.mat} format. In addition you have been provided a file called `\texttt{mmread.m}' which contains a function for reading in these matrices in MatLab.	}
+	
+	
+	\subsection{Spiral inductor}
+	We look here at an integrated RF passive inductor, of the type `spiral inductor'. Spiral inductors, which vary in structure, are among the most common types of on-chip inductors. Spiral inductors are usually characterized by the diameter, the line width, the number of turns, and the line-to-line space. In this case, the inductor has turns that are 40$\mu$m wide, 15$\mu$m thick, with a separation of 40$\mu$m. The spiral is suspended 55$\mu$m over a substrate by posts at the corners and centers of the turns in order to reduce the capacitance to the substrate. To make it also a proximity sensor, a 0.1$\mu$m plane of copper is added 45$\mu$m above the copper spiral.
+	The overall extent of the suspended turns is 1.58mm × 1.58mm. The spiral inductor, including
+	part of the overhanging copper plane, is shown in figure \ref{fig:PEEC}. 
+	\begin{figure}[h]
+		\center
+		\includegraphics[width=.5\linewidth]{images/spiral_inductor.png}
+		\caption{Spiral inductor}\label{fig:PEEC}
+	\end{figure}
+	The model is discretized using a FEM-like technique called PEEC, which results in mesh specific inductance and resistance matrices $L$ and $R$ respectively, corresponding to the following differential state-space form:
+	\begin{align*}
+		L\frac{di_m}{dt}&=Ri_m+Nv_p\\
+		i_p&=N^Ti_m
+	\end{align*}
+	Here $i_m$ is the mesh current and $v_p$ and $i_p$ are the voltage and current at nodes of interest, with $N$ a `natural' matrix mapping between these nodes and the mesh. \textbf{You do not need to understand this in detail! What does the associated Laplace domain state space model look like?} In the multi-gigahertz frequency range, the so-called `skin effect' causes current to
+	flow only at the surface of conductors (i.e. the copper coil and plane), leading to a decrease of wire
+	inductance and an increase of resistance. Capturing the skin eﬀect while also maintaining an accurate low frequency response is a challenge for many model reduction algorithms. For that reason the frequency range considered for this model is very wide: $\omega\in[1,10^{10}]$.
+	\textbf{You have been given a MatLab file containing all the necessary data for this system. Analyze the system in detail and report your findings. Use the function \texttt{bode\_from\_system} or \texttt{bode\_from\_function} to evaluate and plot transfer function in the frequency range $\omega\in [1,10^{10}] $. Recall that $s=2\pi\imath\omega$.}
+	
+\FloatBarrier
+\pagebreak
+\printbibliography
+\end{document}
