@@ -1,3 +1,5 @@
+addpath("../../")
+
 [rows, cols, entries, rep, field, symm] = mminfo('spiral_inductor_peec.E');
 [spiral_inductor_peec.E, rows, cols, entries] = mmread('spiral_inductor_peec.E');
 

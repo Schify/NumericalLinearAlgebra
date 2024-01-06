@@ -22,7 +22,9 @@
 \usepgfplotslibrary{patchplots}
 \usepackage{grffile}
 %% you may also want the following commands
-\pgfplotsset{plot coordinates/math parser=false}
+\pgfplotsset{plot coordinates/math parser=false} 
+\newlength\figureheight
+\newlength\figurewidth 
 %\newlength\figureheight
 %\newlength\figurewidth
 \usepackage{hyperref}
@@ -290,7 +292,7 @@
 		\end{aligned}
 	\end{equation}
 	Note again the abuse in notation, and that in general $E$ is not the identity.
-	\textbf{ What does the transfer function look like now? Can it still be written in some residual form as in equation \ref{eq:transferFunction}? If so, under what assumptions? HINT: this requires looking into the generalized eigenvalue decomposition.}
+%	\textbf{ What does the transfer function look like now? Can it still be written in some residual form as in equation \ref{eq:transferFunction}? If so, under what assumptions? HINT: this requires looking into the generalized eigenvalue decomposition.}
 	Here, analogous to the previous derivation without $E$, the transfer function can be expressed as 
 	\begin{equation}
 		H(s) = \textbf{c}^T \left(sE - A\right)^{-1} \textbf{b}.
@@ -328,7 +330,7 @@
 	part of the overhanging copper plane, is shown in figure \ref{fig:PEEC}. 
 	\begin{figure}[h]
 		\center
-		\includegraphics[width=.5\linewidth]{images/spiral_inductor.png}
+		\includegraphics[width=.45\linewidth]{images/spiral_inductor.png}
 		\caption{Spiral inductor}\label{fig:PEEC}
 	\end{figure}
 	The model is discretized using a FEM-like technique called PEEC, which results in mesh specific inductance and resistance matrices $L$ and $R$ respectively, corresponding to the following differential state-space form:
@@ -336,10 +338,47 @@
 		L\frac{di_m}{dt}&=Ri_m+Nv_p\\
 		i_p&=N^Ti_m
 	\end{align*}
-	Here $i_m$ is the mesh current and $v_p$ and $i_p$ are the voltage and current at nodes of interest, with $N$ a `natural' matrix mapping between these nodes and the mesh. \textbf{You do not need to understand this in detail! What does the associated Laplace domain state space model look like?} In the multi-gigahertz frequency range, the so-called `skin effect' causes current to
+	Here $i_m$ is the mesh current and $v_p$ and $i_p$ are the voltage and current at nodes of interest, with $N$ a `natural' matrix mapping between these nodes and the mesh.
+	%\textbf{You do not need to understand this in detail! What does the associated Laplace domain state space model look like?}
+	The associated Laplace domain state space model will be
+	\begin{equation}
+		\begin{aligned}
+			sL i_m - R i_m &= N v_p\\
+			i_p&=N^Ti_m
+		\end{aligned}
+	\end{equation} 
+	In the multi-gigahertz frequency range, the so-called `skin effect' causes current to
 	flow only at the surface of conductors (i.e. the copper coil and plane), leading to a decrease of wire
 	inductance and an increase of resistance. Capturing the skin eﬀect while also maintaining an accurate low frequency response is a challenge for many model reduction algorithms. For that reason the frequency range considered for this model is very wide: $\omega\in[1,10^{10}]$.
 	\textbf{You have been given a MatLab file containing all the necessary data for this system. Analyze the system in detail and report your findings. Use the function \texttt{bode\_from\_system} or \texttt{bode\_from\_function} to evaluate and plot transfer function in the frequency range $\omega\in [1,10^{10}] $. Recall that $s=2\pi\imath\omega$.}
+	Evaluation of the transfer function proved impossible, due to ill-conditioning, 
+	\pdfmargincomment[author=Andras]{There seems to be a way to evaulate this somehow}
+		\begin{figure}
+		\centering
+		\setlength{\figurewidth}{2\textwidth}
+		\tikzsetfigurename{bode_sprial_inductor}
+		\input{figs/bode_sprial_inductor.tex}
+		\caption{Bode plot for spiral inductor}
+	\end{figure}
+	
+	\begin{figure}
+		\centering
+		\setlength{\figurewidth}{2\textwidth}
+		\tikzsetfigurename{bode_butterfly_gyro}
+		\input{figs/bode_butterfly_gyro.tex}
+		\caption{Bode plot for butterfly gyroscope}
+	\end{figure}
+	
+	
+	\foreach \outind in {1,2,3}{
+	\begin{figure}
+		\centering
+		\setlength{\figurewidth}{2\textwidth}
+		\tikzsetfigurename{bode_iss_i\outind}
+		\input{figs/bode_iss_i\outind.tex}
+		\caption{ISS A12 - Input Channel \outind}
+	\end{figure}
+}
 	
 \FloatBarrier
 \pagebreak
