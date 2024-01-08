@@ -2,7 +2,7 @@ clear
 close all 
 addpath("../matlab2tikz/src/")
 
-N=600;
+N=700;
 %% 1 
 omega_exp_range = [0, 10];
 omega_vals = logspace(omega_exp_range(1), omega_exp_range(2), N);

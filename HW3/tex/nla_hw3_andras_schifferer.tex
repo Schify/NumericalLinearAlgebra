@@ -294,22 +294,22 @@
 	Note again the abuse in notation, and that in general $E$ is not the identity.
 %	\textbf{ What does the transfer function look like now? Can it still be written in some residual form as in equation \ref{eq:transferFunction}? If so, under what assumptions? HINT: this requires looking into the generalized eigenvalue decomposition.}
 	Here, analogous to the previous derivation without $E$, the transfer function can be expressed as 
-	\begin{equation}
+	\begin{equation}\label{eq:Hs-matrix-gen}
 		H(s) = \textbf{c}^T \left(sE - A\right)^{-1} \textbf{b}.
 	\end{equation}
 	If we assume, that $(A, E)$ have a generalized eigenvalue decomposition of the form $A = E P \Lambda P^{-1}$, then we can make the following transformations
 	\begin{equation}
 		\left(sE - A\right)^{-1} = \left(sEP P^{-1}-EP\Lambda P^{-1}\right)^{-1} = \left(EP\left(s I -\Lambda\right) P^{-1}\right)^{-1} = P \left(s I -\Lambda\right)^{-1} P^{-1} E^{-1}
 	\end{equation}
-	with $\Lambda$ being the diagonal vector of the generalized eigenvalues. If we denote $Q^\ast := P^{-1}E^{-1} $ similarly to before, then 
+	with $\Lambda$ being the diagonal vector of the generalized eigenvalues. If we denote $\tilde{Q}^\ast := P^{-1}E^{-1} $ similarly to before, then 
 	\begin{equation}
-		(sI-A)^{-1}=\sum_{i=1}^{n}\frac{\mathbf{p}_i\mathbf{q}_i^{\ast}}{s-\lambda_i}.
+		(sI-A)^{-1}=\sum_{i=1}^{n}\frac{\mathbf{p}_i\tilde{\mathbf{q}}_i^{\ast}}{s-\lambda_i}.
 	\end{equation}
 	and by extension
 	\begin{equation}
 		H(s)
-		=\sum_{i=1}^n \frac{(\mathbf{c}^T\mathbf{p}_i)(\mathbf{q}_i^{\ast}\mathbf{b})}{s-\lambda_i}
-	\end{equation}
+		=\sum_{i=1}^n \frac{(\mathbf{c}^T\mathbf{p}_i)(\tilde{\mathbf{q}}_i^{\ast}\mathbf{b})}{s-\lambda_i}
+	\end{equation}1
 	will also hold in this case.
 	
 	% %%%%%%%%%%%%%%%%%%%
@@ -350,36 +350,407 @@
 	In the multi-gigahertz frequency range, the so-called `skin effect' causes current to
 	flow only at the surface of conductors (i.e. the copper coil and plane), leading to a decrease of wire
 	inductance and an increase of resistance. Capturing the skin eﬀect while also maintaining an accurate low frequency response is a challenge for many model reduction algorithms. For that reason the frequency range considered for this model is very wide: $\omega\in[1,10^{10}]$.
-	\textbf{You have been given a MatLab file containing all the necessary data for this system. Analyze the system in detail and report your findings. Use the function \texttt{bode\_from\_system} or \texttt{bode\_from\_function} to evaluate and plot transfer function in the frequency range $\omega\in [1,10^{10}] $. Recall that $s=2\pi\imath\omega$.}
-	Evaluation of the transfer function proved impossible, due to ill-conditioning, 
-	\pdfmargincomment[author=Andras]{There seems to be a way to evaulate this somehow}
-		\begin{figure}
+	%\textbf{You have been given a MatLab file containing all the necessary data for this system. Analyze the system in detail and report your findings. Use the function \texttt{bode\_from\_system} or \texttt{bode\_from\_function} to evaluate and plot transfer function in the frequency range $\omega\in [1,10^{10}] $. Recall that $s=2\pi\imath\omega$.}
+	
+	Using the theory we derived earlier and the provided matlab files, we can plot the Bode diagram of the system as in \autoref{fig:bode-spiral}
+		\begin{figure} [h!]
 		\centering
 		\setlength{\figurewidth}{2\textwidth}
 		\tikzsetfigurename{bode_sprial_inductor}
 		\input{figs/bode_sprial_inductor.tex}
-		\caption{Bode plot for spiral inductor}
+		\caption{Bode plot for spiral inductor}\label{fig:bode-spiral}
 	\end{figure}
+	\subsection{Butterfly Gyroscope}
+	In inertial navigation, rotation sensors, also called gyroscopes, are indispensible. One such sensor, at the high-end of the quality range is the Butterfly gyroscope. You can see a diagram of this gyro in figure \ref{fig:butterFly2}
+	\begin{figure}[h]
+		\center
+		\includegraphics[width=.5\linewidth]{images/butterfly.png}
+		\caption{Butterfly Gyroscope}\label{fig:butterFly2}
+	\end{figure}
+	By applying DC-biased AC-voltages, the Butterfly wings are forced to vibrate in anti-phase in the wafer plane. This vibrational mode is called the excitation mode. As the structure containing the gyro rotates about the axis of sensitivity (see Figure \ref{fig:butterFly2}), each of the masses will be affected by a Coriolis acceleration. The Coriolis force induces an anti-phase motion of the wings out of the wafer plane, which can be measured via different electrodes. The external angular velocity can be related to the amplitude of this vibrational mode. Since this gyro must be fast and precise, it should be clear to you that a high-precision, but efficiently computable structural model of the gyro must be implemented.
 	
-	\begin{figure}
+	The Gyro is discretized using FEM, resulting in a model of the form
+	\begin{equation}\label{eq:gyromodel}
+		\begin{aligned}
+			M\ddot{\mathbf{x}}+\beta K\dot{\mathbf{x}}+K\mathbf{x}&=B \cdot u(t).\\
+			y(t)&=C^T \mathbf{x}(t)
+		\end{aligned}
+	\end{equation}\\
+	Using the theory we derived earlier and the provided matlab files, we can plot the Bode diagram of the system as in \autoref{fig:bode-gyro}.
+%	\textbf{Note that multiple input and output states are considered! You do not have to report on all input-output pairs, but your methods should work for each of them! You have been given a MatLab file containing all the necessary data for this system. Take $\beta=1e-6$ Analyze the system in detail and report your findings. Use the function \texttt{bode\_from\_system} or \texttt{bode\_from\_function} to evaluate and plot transfer function in the frequency range $\omega\in [1,10000] $. Recall that $s=2\pi\imath\omega$.}
+	
+	\subsection{International space station component}
+	Control is another important source of model order reduction, since the complexity of a controller is dominated by the complexity of the corresponding system. In the International Space Station (ISS), assembly, testing and maneuvring is done in `stages' i.e. parts of the ISS. One such stage, stage 12A, is depicted in figure \ref{fig:stage12A}.
+	\begin{figure}[h]
+		\center
+		\includegraphics[width=.5\linewidth]{images/iss.png}\label{fig:stage12A}
+		\caption{Stage 12A of the ISS. Source: \emph{First Ever Flight Demonstration of Zero Propellant Maneuver(TM) Attitude Control Concept}, Bedrossian, N. \& Bhatt, S.,2007}
+	\end{figure}
+	This stage leads to a large sparse system to be reduced in order. This system was determined using techniques from standard systems theory, and is of the form
+	\begin{align*}
+		s\mathbf{x}-A\mathbf{x}&=B\\
+		\mathbf{y}&=C^T\mathbf{x}
+	\end{align*}
+%	\textbf{Note that multiple input and output states are considered! You do not have to report on all input-output pairs, but your methods should work for each of them!}
+	Due to the large size of stage 12A and the absense of oscillatory air forces in space, we are mainly interested in the low-frequency behavior.
+%	\textbf{You have been given a MatLab file containing all the necessary data for this system. Analyze the system in detail and report your findings. Use the function \texttt{bode\_from\_system} or \texttt{bode\_from\_function} to evaluate and plot transfer function in the frequency range $\omega\in [10^{-2},10^2]$. Recall that $s=2\pi\imath\omega$.}
+	In \autoref{fig:bode-iss1}, \ref{fig:bode-iss2}, and \ref{fig:bode-iss3} we have plotted all of the possible transfer functions of the system. We observe lots of poles in the $\left[10^{-1}, 10^{1}\right]$ range, foreshadowing difficulties in the accurate approximation of the system.
+	\begin{figure}[h!]
 		\centering
 		\setlength{\figurewidth}{2\textwidth}
 		\tikzsetfigurename{bode_butterfly_gyro}
 		\input{figs/bode_butterfly_gyro.tex}
-		\caption{Bode plot for butterfly gyroscope}
+		\caption{Bode plot for butterfly gyroscope}\label{fig:bode-gyro}
 	\end{figure}
 	
 	
-	\foreach \outind in {1,2,3}{
-	\begin{figure}
+	\begin{figure}[h!]
 		\centering
 		\setlength{\figurewidth}{2\textwidth}
-		\tikzsetfigurename{bode_iss_i\outind}
-		\input{figs/bode_iss_i\outind.tex}
-		\caption{ISS A12 - Input Channel \outind}
+		\tikzsetfigurename{bode_iss_i1}
+		\input{figs/bode_iss_i1.tex}
+		\caption{ISS A12 - Input Channel 1}\label{fig:bode-iss1}
 	\end{figure}
-}
+	\begin{figure}[h!]
+		\centering
+		\setlength{\figurewidth}{2\textwidth}
+		\tikzsetfigurename{bode_iss_i2}
+		\input{figs/bode_iss_i2.tex}
+		\caption{ISS A12 - Input Channel 2}\label{fig:bode-iss2}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering
+		\setlength{\figurewidth}{2\textwidth}
+		\tikzsetfigurename{bode_iss_i3}
+		\input{figs/bode_iss_i3.tex}
+		\caption{ISS A12 - Input Channel 3}\label{fig:bode-iss3}
+	\end{figure}
 	
+	% %%%%%%%%%%%%%%%%%%%
+	\FloatBarrier
+	\section{Approximations of the transfer function}
+	% %%%%%%%%%%%%%%%%%%%
+	Now that we know our models, we can start reducing them. This means approximating the actual transfer function by some approximant $\hat{H}$. In this section you are asked to construct such an $\hat{H}$ in three of ways. Keep the following questions in mind: in what way is the transfer function approximated? \\
+	The best way to compare transfer functions is to look at the $\mathcal{H}_2$ norm difference of the transfer functions in the operationally relevant regimes. Due to a lack of time no rigorous comparison could be performed.
+	%\textbf{Compare and contrast the properties of these approximizations, the (typical) quality of the approximation reached, the overall performance,...}\\ 
+	\subsection{Dominant pole methods}
+	\subsubsection*{DPA}
+	In class we have seen modal truncation as a method for model order reduction. One example of this is the \emph{Dominant Pole Algorithm} (DPA). The general form of DPA is given in algorithm \ref{alg:DPA}.
+	\begin{algorithm2e}[ht]
+		\SetKwInOut{Input}{input}
+		\SetKwInOut{Output}{output}
+		\SetKw{Init}{init}{}{}
+		\SetAlgoLined
+		\Input{System $(E, A, b, c)$, initial pole estimate $s_0$ , tolerance $\epsilon$}
+		\Output{Approximate dominant pole $\hat{\lambda}$ and corresponding eigenpair $(\mathbf{x},\mathbf{y})$}
+		\Init{$k:=0$, err = $\infty$}\\
+		\While{$\text{err}>\text{tol}$}{
+			Solve $(s_kE-A)\mathbf{v}_k = \mathbf{b}$\\
+			Solve $(s_kE-A)^{\ast}\mathbf{w}_k = \mathbf{c}$\\
+			Compute the new pole estimate\\
+			$s_{k+1} = s_k -\frac{\mathbf{c}^{\ast} \mathbf{v}_k}{\mathbf{w}_k^{\ast} E\mathbf{v}_k}
+			=\frac{\mathbf{w}_k^{\ast}A\mathbf{v}_k}{\mathbf{w}_k^{\ast}E\mathbf{v}_k}$\\
+			$\mathbf{x}:=\mathbf{v}_k/\|\mathbf{v}_k\|$\\
+			$\mathbf{y}:=\mathbf{w}_k/\|\mathbf{w}_k\|$\\
+			$\text{err}:=\|A\mathbf{x} - s_{k+1}E\mathbf{x}\|_2$\\
+			$k := k + 1$
+		}
+		\caption{DPA}
+		\label{alg:DPA}
+	\end{algorithm2e}
+	
+	\textbf{Explain DPA and its relation to Newton's method. Implement it in \texttt{Matlab}}\\
+	
+	DPA can be understood as Newton's algorithm applied to find a pole of $H$. As a pole of $H$, is a root of the denominator of $H$ \footnote{we have seen before how $H(s)$ can be represented as a rational fraction for simple LTI (Linear Time Invariant) systems}, let us define $Q(s) = \left[H(s)\right]^{-1}$. Furthermore, derivating this expression, we would end up with $Q^\prime(s) = -\left[H(s)\right]^{-1} H^\prime(s) \left[H(s)\right]^{-1}$ (see \autoref{lem:inv_derivative}).
+	
+	To find a root of $Q$, Newton's iteration becomes:
+	\begin{equation}\label{eq:newton-it-Q2H}
+		s_{k+1} = s_{k} - \left[Q^\prime(s)\right]^{-1} Q(s) = s_{k} - \left[-\left[H(s)\right]^{-1} H^\prime(s) \left[H(s)\right]^{-1}\right]^{-1} \left[H(s)\right]^{-1} = s_{k} + \left[H^\prime(s)\right]^{-1} H(s)
+	\end{equation} 
+	
+	Since we know the formula for the transfer function of the generalized system (see \autoref{eq:Hs-matrix-gen}), we can also calculate its derivative as:
+	\begin{equation}
+		H'(s) = \textbf{c}^T \left(sE - A\right)^{-1} E \left(sE - A\right)^{-1} \textbf{b}.
+	\end{equation}
+	As was denoted during the lecture, for a given value of $s$, the regular and adjunct state vector is 
+	\begin{align}
+		\textbf{x} &= \left(sE - A\right)^{-1} \textbf{b},\\
+		\textbf{y}^T &= \textbf{c}^T \left(sE - A\right)^{-1}
+	\end{align}
+	which means that 
+	\begin{equation}
+		H'(s) = -\textbf{y}^\ast  E \textbf{x}.
+	\end{equation}
+	This is quite similar in calculation to $H(s) = \textbf{y}^T\textbf{b} = \textbf{c}^T \textbf{x}$, which are all easy to implement. The Newton iteration therefore further simplifies to 
+	\begin{equation}
+		s_{k+1}  = s_{k} - \left[\textbf{y}^\ast E \textbf{x}\right]^{-1} \textbf{c}^T \textbf{x}.
+	\end{equation}
+	Using the fact that $\textbf{c}^T =^T \textbf{y}^\ast \left(sE - A\right)  \leftrightarrow s \textbf{y}^\ast E - \textbf{c} = \textbf{y}^T A$, we can reformulate this previous as 
+	\begin{equation}
+		s_{k+1}  = s_{k} - \left[\textbf{y}^\ast E \textbf{x}\right]^{-1} \textbf{c}^T \textbf{x} b = \left[\textbf{y}^T E \textbf{x}\right]^{-1} \left(s_k \textbf{y}^T E - \textbf{c}^T\right)\textbf{x} = \left[\textbf{y}^T E \textbf{x}\right]^{-1} \textbf{y}^T A\textbf{x}.
+	\end{equation}
+	Note that the notation in \autoref{alg:DPA} is slightly different, than that used in the derivation, due to the normalization of the eigenvector candidates. 
+	
+	When applying the algorithm, we take an initial value from the right half of the complex plane, so that in the case of a stable system we would converge to the pole with the smallest distance from the imaginary axis (usually the dominant pole).
+	
+	DPA suffers from multiple problems:
+	\begin{itemize}
+		\item It can only be used to approximate one pole.
+		\item Convergence can be problematic in some special cases, or if the initial guess is not good enough.
+		\item Dominant poles are defined as poles with the largest contribution towards the eigenfunction, i.e. where 
+		\begin{equation*}
+			\frac{\left|R_i\right|}{\left|\Re\left(\lambda_i\right)\right|}
+		\end{equation*}
+		is the largest. As DPA will find the eigenvalue, where $\left|\Re\left(\lambda_i\right)\right|$ is the smallest, there is no theoretical guarantee that it will be the dominant pole.
+	\end{itemize}
+	
+	The failure of the dominant pole is illustrated in \autoref{fig:dpa-spiral}. As we can see the estimation is quite bad. While there are sections which do match, most of the approximation is not good, and the DC gain ($\left|H(s)\right|$ as $s \to 0$) seems to be missed as well. 
+	
+	\begin{figure}[h!]
+		\centering
+		\setlength{\figurewidth}{2\textwidth}
+		\tikzsetfigurename{sprial_inductor_dpa}
+		\input{figs/bode_sprial_inductor_dpa_sadpa.tex}
+		\caption{\texttt{DPA} (\autoref{alg:DPA}) and \texttt{SADPA} applied to the Spiral Inductor}\label{fig:dpa-spiral}
+	\end{figure}
+	
+	
+	\subsection*{SADPA}
+%	\textbf{Simple DPA is not a very good or useful algorithm. Explain why. Use this to motivate \emph{subspace accelerated DPA} (SADPA) as you have seen it in the slides.}
+	SADPA (Subspace Accelerated Dominant Poles Algorithm) is an algorithm which aims to correct the flaws as listed for DPA. Instead of discarding the state vector estimates in the algorithm, they are used to construct a subspace (via Gram-Schmidt orthogonalization). This allows the algorithm to converge to multiple eigenvalues at the same time and make better educated choices regarding which is dominant out of them. 
+	
+	The algorithm has been introduced and implemented in the paper by \textcite{sadpa2006rommes}. \texttt{SADPA} usin 20 poles, which it estimated using 141 LU solves. The used parameters can be found in \autoref{table:sadpa-prob1-opts}. With only 20 poles the algorithm was able to successfully converge to a good approximation of the transfer function, as seen \autoref{fig:dpa-spiral}. Note that for higher frequencies this approximation gets relatively worse, as we only care about the absolute error. Still the approximation is close enough even in this range.
+	
+	\begin{table}[h!]
+		\centering
+		\input{tables/sadpa_opt.tex}
+		\caption{The parameters used for \texttt{SADPA} algorithm for the Spiral Inductor}\label{table:sadpa-prob1-opts}
+	\end{table}
+	
+	The same parameters applied to the Butterfly Gyroscope model with \texttt{SADPA} took too much time to converge, presumably due to the badness of the algorithm, with too many factorizations.
+	%You have been provided an algorithm that implements SADPA. This is an extremely complicated algorithm. You do not need to understand the full algorithm, but analyse the settings section of the preamble carefully. For convenience, you can set \texttt{options.use\_lu=0} and \texttt{opt.dpa\_bordered = 0} to start. However the other options require more careful understanding. Play around a bit and pick heuristically good choices. \textbf{You do not have to provide a proof of optimality, but justify your choices.}\\
+	\subsection*{SAQDPA}
+	We can also write a version of SADPA specifically tailored to the quadratic model of a mechanical system. For this we use lemma \ref{lem:quadraticDPA}.
+	\begin{lemma}[Product Rule For Matrix Functions]\label{lem:matr-product-rule}
+		Let $R(s) = \begin{bmatrix}
+			\textbf{r}_1(s) & \textbf{r}_2(s) & \dots & \textbf{r}_{n}(s)
+		\end{bmatrix}^T \in \mathbb{R}^{n\times n} $, with the rows $\textbf{r}_i$ and $C(s) = \begin{bmatrix}
+		\textbf{c}_1(s) & \textbf{c}_2(s) & \dots & \textbf{c}_{n}(s)
+		\end{bmatrix}^T \in \mathbb{R}^{n\times n} $. Then the derivative of the product can be expressed using the product rule as
+		\begin{equation}
+			\frac{\diff}{\diff s} \left(R(s)C(s)\right) = \left(R(s)C(s)\right)^\prime = R^\prime(s) C(s) + R(s) C^\prime(s) = \left[\frac{\diff}{\diff s} R(s)\right]C(s) + R(s)\left[\frac{\diff}{\diff s} C(s)\right]
+		\end{equation}
+	\end{lemma}
+	\begin{proof}
+		Let us introduce the product matrix as $ P(s) = R(s)C(s) = \left[\textbf{r}_i^T(s) \textbf{c}_j\right]_{(i,j)}$ with the elements as the products of the corresponding row of $R$ and column of $C$. Then within each of these elements due to the linearity of the sum within the dot product between the row and column, we know that (using the regular product rule for differentiation)
+		\begin{equation*}
+			\frac{\diff}{\diff s} \left(\textbf{r}_i(s)\textbf{c}_j(s)\right) = \textbf{r}_i^\prime(s)\textbf{c}_j(s) + \textbf{r}_i(s)\textbf{c}^\prime_j(s).
+		\end{equation*}
+		Thereby $P^\prime(s)$ can be written as 
+		\begin{equation*}
+			P^\prime(s) = \left[\frac{\diff}{\diff s} \left(\textbf{r}_i(s)\textbf{c}_j(s)\right)\right]_{(i,j)} = \left[\textbf{r}_i^\prime(s)\textbf{c}_j(s) + \textbf{r}_i(s)\textbf{c}^\prime_j(s)\right]_{(i,j)} = \left[\textbf{r}_i^\prime(s)\textbf{c}_j(s)\right]_{(i,j)} + \left[ \textbf{r}_i(s)\textbf{c}^\prime_j(s)\right]_{(i,j)} = R^\prime(s) C(s) + R(s) C^\prime(s)
+		\end{equation*}
+	\end{proof}
+	
+	\begin{lemma}\label{lem:inv_derivative}
+		Suppose $G(s) \in \mathbb{R}^{n\times n}$ is invertible. Then
+		\begin{equation}\label{eq:mat-inv-deriv}
+			\frac{d}{d s}G^{-1}(s)=-G^{-1}(s)G'(s)G^{-1}(s)
+		\end{equation}
+	\end{lemma}
+	\begin{proof}
+		Since the inverse exists, $I_{n\times n} = G^{-1}(s) G(s) $, corresponding to the identity matrix.
+		Using \autoref{lem:matr-product-rule}, boths sides of the equation can differentiated
+		\begin{equation*}
+			0_{n\times n} = \frac{\diff}{\diff s} \left[ G^{-1}(s) G(s) \right] = G^{-1}(s) \frac{\diff}{\diff s} \left[  G(s) \right] + \frac{\diff}{\diff s} \left[ G^{-1}(s) \right]  G(s)
+		\end{equation*}
+		Multiplying by $G^{-1}(s)$ from the right and rearranging we arrive at the statement in \autoref{eq:mat-inv-deriv}.
+	\end{proof}
+	
+	\begin{lemma}\label{lem:quadraticDPA}
+		Suppose $(s^2M+sD+K):=G(s)$ is invertible. Then
+		\begin{align*}
+			\frac{d}{d s}G^{-1}(s)&=-G^{-1}(s)G'(s)G^{-1}(s)\\
+			&=-(s^2M+sD+K)^{-1}(2sM+D)(s^2M+sD+K)^{-1}
+		\end{align*}
+	\end{lemma}
+	\begin{proof}
+		This is a direct result of \autoref{lem:inv_derivative}, applied to $G(s)$, where we know $G^\prime(s) = 2 s M + D$. 
+	\end{proof}
+	
+%	\textbf{Prove this lemma. Use it to construct a Newton method for a quadratic model like in the case of (regular) DPA. Call this algorithm QDPA and write down what this algorithm looks like. Implement this in \texttt{Matlab}}\\
+The algorithm for QDPA has been implemented in Matlab, however some bug prevents the presentation of results, as it failed ot converge for the Butterfly Gyroscope.
+	
+	We can again use Newton's algorithm applied to $Q(s) = \left(H(s)\right)^{-1}$ to find poles of the system. In this case we know that the transfer function of the system is 
+	\begin{equation}
+		H(s) = \textbf{c}^T \left(M s^2 + D s + K\right)^{-1} \textbf{b} = \textbf{c}^T G^{-1}(s) \textbf{b}.
+	\end{equation} 
+	Then the derivative using the \autoref{lem:quadraticDPA}
+	\begin{equation}
+		\begin{aligned}
+			H^\prime(s) &= -\textbf{c}^T G^{-1}(s)G'(s)G^{-1}(s) \textbf{b} \\ & = -\textbf{c}^T (s^2M+sD+K)^{-1}(2sM+D)(s^2M+sD+K)^{-1} \textbf{b}.
+		\end{aligned}
+	\end{equation}
+	Therefore, the Newton iteration (like in \autoref{eq:newton-it-Q2H})
+	\begin{equation}
+		\begin{aligned}
+			s_{k+1} &= s_{k} + \left[H^\prime(s_k)\right]^{-1} H(s_k) \\ &=  s_{k} - \left[\textbf{c}^T (s_k^2M+s_kD+K)^{-1}(2s_kM+D)(s_k^2M+s_kD+K)^{-1} \textbf{b}\right]^{-1} \textbf{c}^T \left(M s_k^2 + D s_k + K\right)^{-1} \textbf{b}.
+		\end{aligned}
+	\end{equation}
+	If we introduce the notation again as 
+	\begin{align}
+		\textbf{v}_k &= (s_k^2M+s_kD+K)^{-1} \textbf{b}\\
+		\textbf{w}_k &= (s_k^2M+s_kD+K)^{-\ast} \textbf{c}
+	\end{align}
+	Then the step becomes 
+	\begin{equation}
+			s_{k+1}  =  s_{k} - \left[\textbf{w}_k^\ast (2s_kM+D)\textbf{v}_k\right]^{-1} \textbf{w}_k^\ast  \textbf{b}.
+	\end{equation}
+	All of this together can be used to construct the \texttt{QDPA} algorithm as in \autoref{alg:QDPA}. It has been implemented in Matlab, but it did not provide satisfacotry results for the butterfly gyroscope problem either.
+	\begin{algorithm2e}[ht]
+		\SetKwInOut{Input}{input}
+		\SetKwInOut{Output}{output}
+		\SetKw{Init}{init}{}{}
+		\SetAlgoLined
+		\Input{System $(M, D, K, \textbf{b}, \textbf{c})$, initial pole estimate $s_0$ , tolerance $\epsilon$}
+		\Output{Approximate dominant pole $\hat{\lambda}$ and corresponding eigenpair $(\mathbf{x},\mathbf{y})$}
+		\Init{$k:=0$, err = $\infty$}\\
+		\While{$\text{err}>\text{tol}$}{
+			Solve $(s_k^2M+s_kD+K)\mathbf{v}_k = \mathbf{b}$\\
+			Solve $(s_k^2M+s_kD+K)^{\ast}\mathbf{w}_k = \mathbf{c}$\\
+			Compute the new pole estimate\\
+			$s_{k+1} = s_k -\frac{\mathbf{c}^{\ast} \mathbf{v}_k}{\mathbf{w}_k^{\ast} (2s_kM+D)\mathbf{v}_k}$\\
+			$\mathbf{x}:=\mathbf{v}_k/\|\mathbf{v}_k\|$\\
+			$\mathbf{y}:=\mathbf{w}_k/\|\mathbf{w}_k\|$\\
+			$\text{err}:=\|\left(s_k^2M+s_kD+K\right)\textbf{x}\|_2$\\
+			$k := k + 1$
+		}
+		\caption{QDPA}
+		\label{alg:QDPA}
+	\end{algorithm2e}
+	
+	
+	\subsection{Iterative Rational Krylov}
+	Suppose we have a system of the form
+	\begin{equation}\label{eq:stateSpace}
+		\begin{aligned}
+			s\mathbf{x}-A\mathbf{x}&=\mathbf{b}u\\
+			y&=\mathbf{c}^T\mathbf{x}.
+		\end{aligned} 
+	\end{equation}
+	with associated transfer function
+	$$H(s)=\sum_{i=1}^n\frac{R_i}{s-\lambda_i}.$$
+	Theoretically, the Iterative Rational Krylov Algorithm (IRKA) aims at minimizing
+	$$\|H-\hat{H}\|_{\mathcal{H}_2}:=\left(\int_{\infty}^{\infty}|H(is)-\hat{H}(is)|ds\right)^{\frac{1}{2}}$$
+	over the set $\mathcal{V}_d$ of approximants
+	$$\hat{H}(s)=\sum_{i=1}^d\frac{\hat{R}_i}{s-\hat{\lambda}_i}$$
+	of fixed Macmillan degree $d$.
+	This lemma is useful:
+	\begin{lemma}\label{lem:H2opt-G}
+		If
+		$$G(s)=\sum_{i=1}^{n}\frac{R_i}{s-\lambda_i}$$
+		then it holds that
+		$$\|G\|_{\mathcal{H}_2}^2=\sum_{i=1}^{n}R_iG(-\lambda_i)$$
+		under mild technical assumptions that you can assume satisfied.
+	\end{lemma}
+	
+	$\hat{H}$ will be defined as 
+	\begin{equation}
+		\hat{H}(s)=\sum_{i=1}^d\frac{\hat{R}_i}{s-\hat{\lambda}_i}
+	\end{equation}
+	with $\hat{R}_i$ approximate residues and $\hat{\lambda}_i$ approximate eigenvalues ($i=1,2, \dots d$). 
+	
+	Now define the error function 
+	$$\mathcal{E}\left(\hat{R}_1, \hat{R}_2, \dots, \hat{R}_d,\hat{\lambda}_1, \hat{\lambda}_2, \dots, \hat{\lambda}_d \right):=\|H(s)-\hat{H}(s)\|_{\mathcal{H}_2}^2$$
+	and observe that in the context of minimizing $\mathcal{E}$ over the set of approximate models $\hat{H}$ of fixed Macmillan degree $d$, $\mathcal{E}$ is a function of $2d$ variables. 
+	%\textbf{Explain this. Which variables are this specifically? Use this together with the lemma to show that a necessary condition for $\mathcal{E}$ to be minimized over the set of models $\mathcal{V}_d$ is that}
+	
+	
+	In $\mathcal{E}$'s extrema we can use our knowledge from calculus to find necessary conditions the extremity using the gradient condition. This means that the gradient must be zero in an extrema, and therefore\footnote{Note that the notation is a bit sloppy here, for instance $\lambda_i$ both refers to the parameter value where we are evaluating and also the variable with which we are derivating}
+	\begin{equation*}
+		\left.\frac{\diff}{\diff \hat{R}_j} \mathcal{E}\right|_{(\hat{R}_j, \hat{\lambda}_j)} = 0\quad \mathrm{and} \quad \left.\frac{\diff}{\diff \hat{\lambda}_j} \mathcal{E} \right|_{(\hat{R}_j, \hat{\lambda}_j)} = 0 \quad \quad \mathrm{for} \, j=1,2, \dots d
+	\end{equation*}
+	With the help of \autoref{lem:H2opt-G} we know that 
+	\begin{equation}
+		\begin{aligned}
+		\mathcal{E}\left(\hat{R}_1, \hat{R}_2, \dots, \hat{R}_d,\hat{\lambda}_1, \hat{\lambda}_2, \dots, \hat{\lambda}_d \right):=\|G(s)\|_{\mathcal{H}_2}^2 &= \sum_{i=1}^{n} R_i G(-\lambda_i) - \sum_{i=1}^{d} \hat{R}_i G(-\hat{\lambda}_i) \\&=
+		\sum_{i=1}^{d} \left(R_i  G(-\lambda_i) -\hat{R}_i G(-\hat{\lambda}_i) \right) - \sum_{i=d+1}^{n} {R}_i G(-{\lambda}_i) 
+		\end{aligned}
+	\end{equation}
+	using $G(s) = H(s) - \hat{H}(s)$, due to $\hat{R}_i$ appearing with a negative sign in $G$, and assuming that all of the poles are distinct. We can see that 
+	\begin{equation}
+		\left.\frac{\diff}{\diff \hat{R}_j} G(-\hat{\lambda}_i)\right|_{\lambda_j} = - \frac{1}{-\hat{\lambda}_i-\lambda_j}
+	\end{equation}
+	and 
+	\begin{equation}
+		\left.\frac{\diff}{\diff \hat{\lambda}_j} G(-\hat{\lambda}_i)\right|_{\lambda_j} = \frac{\hat{R}_j}{\left(-\hat{\lambda}_i-\lambda_j\right)^2}
+	\end{equation}
+	
+	Then the conditions are transformed into
+	\begin{align*}
+		 \underbrace{\sum_{i=1}^{n} R_i \left(- \frac{1}{-{\lambda}_i-\hat{\lambda}_j}\right) - \sum_{i=1}^{d} \hat{R}_i \left(- \frac{1}{-\hat{\lambda}_i-\hat{\lambda}_j}\right)}_{=- G(-\hat{\lambda}_j)} - G(-\hat{\lambda}_j) &= 0
+		\quad \mathrm{and}\\
+		 \sum_{i=1}^{n} R_i \frac{\hat{R}_j}{\left(-{\lambda}_i-\hat{\lambda}_j\right)^2} - \sum_{i=1}^{d} \hat{R}_i \frac{\hat{R}_j}{\left(-\hat{\lambda}_i-\hat{\lambda}_j\right)^2} &= 0 \quad \quad \mathrm{for} \, j=1,2, \dots d
+	\end{align*}
+	from the former 
+	\begin{equation}
+		H(-\hat{\lambda}_i)=\hat{H}(-\hat{\lambda}_i)
+	\end{equation}
+	from the latter (after dividing by $\hat{R}_j$, and considering that the derivative of $H^\prime(s) = -\sum_{i=1}^{n} \nicefrac{R_i}{\left(s-\lambda_i\right)^2}$)
+	\begin{align}
+		H'(-\hat{\lambda}_i)&=\hat{H}'(-\hat{\lambda}_i)
+	\end{align}
+%	\textbf{In the context of Krylov methods for model order reduction, what kind of scheme do these conditions make IRKA?}\\
+	These conditions are Hermitian interpolations of $H$, making IRKA the Krylov version of Hermitian interpolation, matching two of the moments at $\sigma_i = -\hat{\lambda}_i$. 
+	
+	
+	%	\textbf{Is it possible to directly make this above condition be satisfied? Why (not)?}\\
+	
+	Unfortunately, to directly satisfy the first order sufficient conditions for optimality, as we have seen before, we would be required to solve a non-linear system of equations. This would be prohibitively expensive, and possibly ill-conditioned.
+
+	 There is a way to approximate the solution though. \autoref{alg:IRKA} implements this into an algorithm, where we try to converge with the $\sigma_i$ to the optimal $-\hat{\lambda}_i$, for a given size. We project the system into the state and adjoint state space calculated exactly for the current guesses of $\sigma_i$. In this new reduced system we calculate $\hat{\lambda}_i$. It is easy to see, that $\sigma_i = -\hat{\lambda}_i$ would be a fixed point for this procedure (we have seen, that the interpolation would work in interpolation points, which are minus the eigenvalues of the reduced system), and since we showed that state would have optimal cost too, we can hope for convergence (theoretically this is only guaranteed in special cases, i.e. for symmetric positive definite matrices). Convergence is judged based on whether there has been a substantial change in the estimated eigenvalues.
+	%\textbf{Use the above reasoning and definitions to explain the basic mechanism behind IRKA, given in algorithm
+	%\ref{alg:IRKA} (Observe that this version of IRKA is specifically for descriptor systems)}
+	\begin{algorithm2e}[ht]
+		\SetKwInOut{Input}{input}
+		\SetKwInOut{Output}{output}
+		\SetKw{Init}{init}{}{}
+		\SetAlgoLined
+		\Input{System $(E, A, b, c)$, init. pole estimates $\{\sigma_i\}_{i=1}^{k}$ , tolerance $\epsilon$\\}
+		\Output{Approximate model $(\hat{E}, \hat{A}, \hat{b}, \hat{c})$}
+		\While{$\text{norm of }\sigma \text{-update}>\text{tol}$}{
+			$V=\text{orth}\{\mathbf{x}(\sigma_1),\ldots,\mathbf{x}(\sigma_k)\}$\\
+			$W=\text{orth}\{\mathbf{z}(\sigma_1),\ldots,\mathbf{z}(\sigma_k)\}$\\
+			$\hat{E}=W^{T}EV, \hat{A}=W^{T}AV, \hat{\mathbf{b}}=W^T\mathbf{b},\hat{\mathbf{c}}=V^T\mathbf{c}$\\
+			calculate generalized eigenvalues $\{\hat{\lambda}_1,\ldots,\hat{\lambda}_k\}$ of $(\hat{A},\hat{E})$\\
+			set $\sigma_i:=-\hat{\lambda}_i$ for all $i=1,\ldots,k$\\ 
+		}
+		$V=\text{orth}\{\mathbf{x}(\sigma_1),\ldots,\mathbf{x}(\sigma_k)\}$\\
+		$W=\text{orth}\{\mathbf{z}(\sigma_1),\ldots,\mathbf{z}(\sigma_k)\}$\\
+		$\hat{E}=W^{T}EV, \hat{A}=W^{T}AV, \hat{\mathbf{b}}=W^T\mathbf{b},\hat{\mathbf{c}}=V^T\mathbf{c}$
+		\caption{IRKA}
+		\label{alg:IRKA}
+	\end{algorithm2e}
+	
+	With the implementation that has been provided some experiments have been performed on the spiral inductor system in \autoref{fig:sprial_inductor_irka}. Note that due to $\mathcal{H}_2$ optimality, even with $n=1$ the approximation is more accurate in its overall shape. The problem however lies with the speed of the algorithm's convergence, which goes up quite significantly, as the order is increased.
+	
+	\begin{figure}[h!]
+		\centering
+		\setlength{\figurewidth}{2\textwidth}
+		\tikzsetfigurename{sprial_inductor_irka}
+		\input{figs/bode_sprial_inductor_irka.tex}
+		\caption{\texttt{IRKA} (as in \autoref{alg:IRKA}) applied to the Spiral Inductor with different orders of approximation.}\label{fig:sprial_inductor_irka}
+	\end{figure}
+%	\textbf{You have been provided code that implements IRKA for descriptor systems. Adapt this code into a new function that works for quadratic models. What options do you have in case of quadratic models? Which one seems the best? Justify your choice. Apply IRKA to the three models. Compare IRKA to the DPA based approximation schemes.}
+
+\subsection{Greedy Rational Krylov}
+%In the slides on model order reduction you can also find the Greedy Rational Krylov method. \textbf{Explain the principles of Greedy rational Krylov. You have been provided a version of greedy rational Krylov for descriptor sytems. Again, as for IRKA, adapt this code into new code for quadratic models. Test this greedy algorithm on the three systems provided and report your results. Compare and contrast as before. Interpret your findings carefully.}
+One of the main problems making IRKA and expensive algorithm (too many LU factorizations), is that it tries to converge with all of the eigenvalues all at once. This makes the steps in the algorithm quite expensive, and slow as a result. 
+
+In the Greedy version of IRKA instead of converging with all of the eigenvalues simultaneously, we build the set in a way so that at each iteration step we pick the point with the largest residual norm. Although the set as a whole won't be optimal, and we generally will need more eigenvalues to get the same residue as with the regular IRKA, however the convergence takes less computational effort.
+
+Using the implementation provided for GRKA the estimation has been performed for the spiral inductor in \autoref{fig:sprial_inductor_irka}, where it achieved similar results to the higher order IRKA's, however it has done so with a considerable shorter runtime.
+\pdfmargincomment[author=Andras]{I know that the error should be compared here in the H2 sense but I do not have time to implement that.}
 \FloatBarrier
 \pagebreak
 \printbibliography
